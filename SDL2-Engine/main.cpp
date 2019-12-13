@@ -1,22 +1,27 @@
-//g++ -o a file.cpp `pkg-config --libs --cflags sdl2`
+// //g++ -o a file.cpp `pkg-config --libs --cflags sdl2`
 
-#include "SDL2/SDL.h"
 #include <iostream>
 
-int main() {
+#include "SDL2/SDL.h"
+#include "game.hpp"
 
-    SDL_Init(SDL_INIT_VIDEO);
+Game *game = nullptr;
 
-    SDL_Window *window = SDL_CreateWindow("Titleee", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+int main(int argc, const char * argv[]) {
 
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
+    game = new Game();
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    game->init("getting started", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, false);
 
-    SDL_RenderClear(renderer);
+    while(game->running()) {
 
-    SDL_RenderPresent(renderer);
+        game->handle_events();
+        game->update();
+        game->render();
 
-    SDL_Delay(3000);
+    }
 
+    game->clean();
+
+    return 0;
 }
