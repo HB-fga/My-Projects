@@ -1,9 +1,7 @@
-// //g++ -o a file.cpp `pkg-config --libs --cflags sdl2`
-
-#include <iostream>
-
 #include "SDL2/SDL.h"
 #include "game.hpp"
+
+#include <iostream>
 
 Game *game = nullptr;
 
