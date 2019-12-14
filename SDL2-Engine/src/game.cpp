@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+SDL_Texture* player_tex;
+
 Game::Game()
 {}
 Game::~Game()
@@ -33,6 +35,8 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
 
     }
     else is_running = false;
+
+    SDL_Surface* tmp_surface = IMG_Load("assets/player.png");
 
 }
 
