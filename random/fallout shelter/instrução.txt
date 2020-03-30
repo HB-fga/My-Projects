@@ -1,0 +1,1 @@
+Escreva o nome do seu habitante e seus respectivos status special em ordem e separados por um TAB entre a linha que comeca com "PEOPLE" e a linha que termina em um ponto final "."

@@ -1,0 +1,7 @@
+PEOPLE	S	P	E	C	I	A	L
+Dweller1	1	2	3	4	5	6	7
+Dweller2	10	10	10	10	10	10	10
+Dweller3	1	1	1	1	1	1	1
+Emil	7	6	5	2	4	9	4
+Sarah	7	3	2	1	1	9	2
+.

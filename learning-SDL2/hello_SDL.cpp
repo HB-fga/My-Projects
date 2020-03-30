@@ -96,13 +96,25 @@ bool loadMedia()
 
 SDL_Surface* loadSurface( std::string path ) {
 
+    SDL_Surface* optimizedSurface = NULL;
+
     SDL_Surface* loadedSurface = SDL_LoadBMP(path.c_str());
     if(loadedSurface == NULL)
     {
         printf("Error: %s\n", SDL_GetError());
     }
+    else
+    {
+		optimizedSurface = SDL_ConvertSurface( loadedSurface, gScreenSurface->format, 0 );
+		if( optimizedSurface == NULL )
+		{
+			printf( "Error: %s\n", SDL_GetError() );
+		}
 
-    return loadedSurface;
+		SDL_FreeSurface( loadedSurface );
+	}
+
+	return optimizedSurface;
 }
 
 void close() {
