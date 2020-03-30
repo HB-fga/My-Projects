@@ -96,12 +96,16 @@ int main() {
     int i_dweller;
     int i_stat;
     int room_lv;
+    int goal_lv;
     string dweller_name;
     string linha;
     fstream arquivo_io;
 
     cout << "informe o nivel da sala de treinamento: ";
     cin >> room_lv;
+
+    cout << "informe a meta de nivel que pretende que seus habitantes alcancem: ";
+    cin >> goal_lv;
 
     i_dweller = 0;
     arquivo_io.open("habitantes.txt", std::ios::in);
@@ -129,8 +133,8 @@ int main() {
                     else
                     {
                         special = find_special(i_stat);
-                        cout << special << token << " para 7: ";
-                        print_time(time_in_seconds(time_left(stoi(token), 7), points_per_second(room_lv)));
+                        cout << special << token << " para " << goal_lv <<": ";
+                        print_time(time_in_seconds(time_left(stoi(token), goal_lv), points_per_second(room_lv)));
                     }
 
                     linha.erase(0, pos + delimiter.length());
@@ -139,8 +143,8 @@ int main() {
                 }
 
                 special = find_special(i_stat);
-                cout << special << linha << " para 7: ";
-                print_time(time_in_seconds(time_left(stoi(linha), 7), points_per_second(room_lv)));
+                cout << special << linha << " para " << goal_lv <<": ";
+                print_time(time_in_seconds(time_left(stoi(linha), goal_lv), points_per_second(room_lv)));
             }
 
             i_dweller++;
