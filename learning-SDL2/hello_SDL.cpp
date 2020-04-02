@@ -9,15 +9,15 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-// constantes de cada superficie para cada tecla
-enum KeyPressSurfaces
+// constantes de cada textura para cada tecla
+enum KeyPressTextures
 {
-    KEY_PRESS_SURFACE_DEFAULT,
-    KEY_PRESS_SURFACE_UP,
-    KEY_PRESS_SURFACE_DOWN,
-    KEY_PRESS_SURFACE_LEFT,
-    KEY_PRESS_SURFACE_RIGHT,
-    KEY_PRESS_SURFACE_TOTAL
+    KEY_PRESS_TEXTURE_DEFAULT,
+    KEY_PRESS_TEXTURE_UP,
+    KEY_PRESS_TEXTURE_DOWN,
+    KEY_PRESS_TEXTURE_LEFT,
+    KEY_PRESS_TEXTURE_RIGHT,
+    KEY_PRESS_TEXTURE_TOTAL
 };
 
 // Inicia a SDL e cria janela
@@ -29,20 +29,20 @@ void close();
 // Carrega as midias requisitadas
 bool loadMedia();
 
-// Carrega uma imagem individual
-SDL_Surface* loadSurface( std::string path );
+// Carrega uma imagem individual como textura
+SDL_Texture* loadTexture(std::string path);
 
 // Janela onde vamos renderizar
 SDL_Window* gWindow = NULL;
 
-// Superficie (surface) contida pela janela
-SDL_Surface* gScreenSurface = NULL;
+// Renderizador da janela
+SDL_Renderer* gRenderer = NULL;
 
-// Imagem exibida atualmente
-SDL_Surface* gCurrentSurface = NULL;
+// Textura exibida atualmente
+SDL_Texture* gTexture = NULL;
 
 // As imagens que correspondem a cada tecla
-SDL_Surface* gKeyPressSurfaces[ KEY_PRESS_SURFACE_TOTAL ];
+SDL_Texture* gKeyPressTextures[ KEY_PRESS_TEXTURE_TOTAL ];
 
 bool init() {
     bool success = true;
@@ -64,22 +64,57 @@ bool init() {
         }
         else
         {
-            // Inicia o carregamento PNG
-            int imgFlags = IMG_INIT_PNG;
-            if( !(IMG_Init(imgFlags) & imgFlags))
+            // Cria renderizador para a janela
+            gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+            if(gRenderer == NULL)
             {
-                printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+                printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
                 success = false;
             }
             else
             {
-                // Pega superficie da janela
-                gScreenSurface = SDL_GetWindowSurface(gWindow);
+                // Inicia a core do renderizador
+                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+                // Inicia o carregamento PNG
+                int imgFlags = IMG_INIT_PNG;
+                if( !(IMG_Init(imgFlags) & imgFlags))
+                {
+                    printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+                    success = false;
+                }
             }
         }
     }
 
     return success;
+}
+
+SDL_Texture* loadTexture(std::string path)
+{
+    // Textura final
+    SDL_Texture* newTexture = NULL;
+
+    // Carrega imagem
+    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
+    if( loadedSurface == NULL)
+    {
+        printf( "Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError() );
+    }
+    else
+    {
+        // Cria textura pelos pixels da superficie
+        newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
+        if( newTexture == NULL)
+        {
+            printf( "Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError() );
+        }
+
+        // Libera a surface temporaria
+        SDL_FreeSurface(loadedSurface);
+    }
+
+    return newTexture;
 }
 
 bool loadMedia()
@@ -88,40 +123,40 @@ bool loadMedia()
     bool success = true;
 
     // Carrega default
-    gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] = loadSurface("press.png");
-    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] == NULL )
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ] = loadTexture("press.png");
+    if( gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ] == NULL )
     {
         printf( "Failed to load default image!\n" );
         success = false;
     }
 
     // Carrega up
-    gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ] = loadSurface( "up.bmp" );
-    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ] == NULL )
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_UP ] = loadTexture( "up.bmp" );
+    if( gKeyPressTextures[ KEY_PRESS_TEXTURE_UP ] == NULL )
     {
         printf( "Failed to load up image!\n" );
         success = false;
     }
 
     // Carrega down
-    gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ] = loadSurface( "down.bmp" );
-    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ] == NULL )
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_DOWN ] = loadTexture( "down.bmp" );
+    if( gKeyPressTextures[ KEY_PRESS_TEXTURE_DOWN ] == NULL )
     {
         printf( "Failed to load down image!\n" );
         success = false;
     }
 
     // Carrega left
-    gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ] = loadSurface( "left.bmp" );
-    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ] == NULL )
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_LEFT ] = loadTexture( "left.bmp" );
+    if( gKeyPressTextures[ KEY_PRESS_TEXTURE_LEFT ] == NULL )
     {
         printf( "Failed to load left image!\n" );
         success = false;
     }
 
     // Carrega right
-    gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ] = loadSurface( "right.bmp" );
-    if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ] == NULL )
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_RIGHT ] = loadTexture( "right.bmp" );
+    if( gKeyPressTextures[ KEY_PRESS_TEXTURE_RIGHT ] == NULL )
     {
         printf( "Failed to load right image!\n" );
         success = false;
@@ -130,43 +165,47 @@ bool loadMedia()
     return success;
 }
 
-SDL_Surface* loadSurface( std::string path ) {
+// Essa funcao se tornou obsoleta na aula 7 (Texture Loading and Rendering) junto com algumas outras linhas de codigo que foram apagadas
+// SDL_Surface* loadSurface( std::string path ) {
 
-    // Imagem final e otimizada
-    SDL_Surface* optimizedSurface = NULL;
+//     // Imagem final e otimizada
+//     SDL_Surface* optimizedSurface = NULL;
 
-    // Carrega imagem
-    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-    if(loadedSurface == NULL)
-    {
-        printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
-    }
-    else
-    {
-        // Converte a superficie para o tamanho da tela
-		optimizedSurface = SDL_ConvertSurface( loadedSurface, gScreenSurface->format, 0 );
-		if( optimizedSurface == NULL )
-		{
-			printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
-		}
+//     // Carrega imagem
+//     SDL_Surface* loadedSurface = IMG_Load(path.c_str());
+//     if(loadedSurface == NULL)
+//     {
+//         printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
+//     }
+//     else
+//     {
+//         // Converte a superficie para o tamanho da tela
+// 		optimizedSurface = SDL_ConvertSurface( loadedSurface, gScreenSurface->format, 0 );
+// 		if( optimizedSurface == NULL )
+// 		{
+// 			printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+// 		}
         
-        // Libera superficie temporaria
-		SDL_FreeSurface( loadedSurface );
-	}
+//         // Libera superficie temporaria
+// 		SDL_FreeSurface( loadedSurface );
+// 	}
 
-	return optimizedSurface;
-}
+// 	return optimizedSurface;
+// }
 
 void close() {
     // Libera imagem carregada
-    SDL_FreeSurface(gCurrentSurface);
-    gCurrentSurface = NULL;
+    SDL_DestroyTexture(gTexture);
+    gTexture = NULL;
 
     // Destroi janela
+    SDL_DestroyRenderer(gRenderer);
     SDL_DestroyWindow(gWindow);
     gWindow = NULL;
+    gRenderer = NULL;
 
     // Fecha a SDL
+    IMG_Quit();
     SDL_Quit();
 }
 
@@ -192,8 +231,8 @@ int main( int argc, char* args[] ) {
             // Event handler
             SDL_Event e;
 
-            // Seta a superficie atual como a default
-            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+            // Seta a textura atual como a default
+            gTexture = gKeyPressTextures[KEY_PRESS_TEXTURE_DEFAULT];
 
             while( !quit )
             {
@@ -208,37 +247,40 @@ int main( int argc, char* args[] ) {
                     // Usuario pressionou uma tecla
                     else if( e.type == SDL_KEYDOWN )
                     {
-                        // Seleciona superficie baseada na tecla
+                        // Seleciona a textura baseada na tecla
                         switch( e.key.keysym.sym )
                         {
                             case SDLK_UP:
-                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ];
+                            gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_UP ];
                             break;
 
                             case SDLK_DOWN:
-                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ];
+                            gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_DOWN ];
                             break;
 
                             case SDLK_LEFT:
-                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ];
+                            gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_LEFT ];
                             break;
 
                             case SDLK_RIGHT:
-                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ];
+                            gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_RIGHT ];
                             break;
 
                             default:
-                            gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ];
+                            gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ];
                             break;
                         }
                     }
                 }
 
-                // Aplica a imagem atual
-                SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
-                
+                // Limpa a tela
+                SDL_RenderClear(gRenderer);
+
+                // Renderiza textura na tela
+                SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+
                 // Atualiza a tela
-                SDL_UpdateWindowSurface(gWindow);
+                SDL_RenderPresent(gRenderer);
             }
         }
     }
