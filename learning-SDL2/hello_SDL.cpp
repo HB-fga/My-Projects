@@ -1,5 +1,5 @@
 // Linha de compilacao
-// g++ file.cpp -w -lSDL2 -o prog
+// g++ file.cpp -w -lSDL2 -lSDL2_image -o prog
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -50,7 +50,7 @@ bool init() {
     // Inicia SDL
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
-        printf( "SDL not initialized! SDL_Error: %s\n", SDL_GetError() );
+        printf("SDL not initialized! SDL_Error: %s\n", SDL_GetError());
         success = false;
     }
     else
@@ -59,16 +59,25 @@ bool init() {
         gWindow = SDL_CreateWindow("Yaaaay!", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if(gWindow == NULL)
         {
-            printf( "Window not created! SDL_Error: %s\n", SDL_GetError() );
+            printf("Window not created! SDL_Error: %s\n", SDL_GetError());
             success = false;
         }
         else
         {
-            // Pega superficie da janela
-            gScreenSurface = SDL_GetWindowSurface(gWindow);
+            // Inicia o carregamento PNG
+            int imgFlags = IMG_INIT_PNG;
+            if( !(IMG_Init(imgFlags) & imgFlags))
+            {
+                printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+                success = false;
+            }
+            else
+            {
+                // Pega superficie da janela
+                gScreenSurface = SDL_GetWindowSurface(gWindow);
+            }
         }
     }
-
 
     return success;
 }
@@ -79,7 +88,7 @@ bool loadMedia()
     bool success = true;
 
     // Carrega default
-    gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] = loadSurface( "press.bmp" );
+    gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] = loadSurface("press.png");
     if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] == NULL )
     {
         printf( "Failed to load default image!\n" );
@@ -127,10 +136,10 @@ SDL_Surface* loadSurface( std::string path ) {
     SDL_Surface* optimizedSurface = NULL;
 
     // Carrega imagem
-    SDL_Surface* loadedSurface = SDL_LoadBMP(path.c_str());
+    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
     if(loadedSurface == NULL)
     {
-        printf("Error: %s\n", SDL_GetError());
+        printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
     }
     else
     {
@@ -138,7 +147,7 @@ SDL_Surface* loadSurface( std::string path ) {
 		optimizedSurface = SDL_ConvertSurface( loadedSurface, gScreenSurface->format, 0 );
 		if( optimizedSurface == NULL )
 		{
-			printf( "Error: %s\n", SDL_GetError() );
+			printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
 		}
         
         // Libera superficie temporaria
