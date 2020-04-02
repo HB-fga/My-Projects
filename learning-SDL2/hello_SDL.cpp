@@ -2,6 +2,7 @@
 // g++ file.cpp -w -lSDL2 -o prog
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <string>
 
