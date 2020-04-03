@@ -73,7 +73,7 @@ bool init() {
             }
             else
             {
-                // Inicia a core do renderizador
+                // Inicia a cor do renderizador
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
                 // Inicia o carregamento PNG
@@ -89,6 +89,34 @@ bool init() {
 
     return success;
 }
+
+// Essa funcao se tornou obsoleta na aula 7 (Texture Loading and Rendering) junto com algumas outras linhas de codigo que foram apagadas
+// SDL_Surface* loadSurface( std::string path ) {
+
+//     // Imagem final e otimizada
+//     SDL_Surface* optimizedSurface = NULL;
+
+//     // Carrega imagem
+//     SDL_Surface* loadedSurface = IMG_Load(path.c_str());
+//     if(loadedSurface == NULL)
+//     {
+//         printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
+//     }
+//     else
+//     {
+//         // Converte a superficie para o tamanho da tela
+// 		optimizedSurface = SDL_ConvertSurface( loadedSurface, gScreenSurface->format, 0 );
+// 		if( optimizedSurface == NULL )
+// 		{
+// 			printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+// 		}
+        
+//         // Libera superficie temporaria
+// 		SDL_FreeSurface( loadedSurface );
+// 	}
+
+// 	return optimizedSurface;
+// }
 
 SDL_Texture* loadTexture(std::string path)
 {
@@ -165,34 +193,6 @@ bool loadMedia()
     return success;
 }
 
-// Essa funcao se tornou obsoleta na aula 7 (Texture Loading and Rendering) junto com algumas outras linhas de codigo que foram apagadas
-// SDL_Surface* loadSurface( std::string path ) {
-
-//     // Imagem final e otimizada
-//     SDL_Surface* optimizedSurface = NULL;
-
-//     // Carrega imagem
-//     SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-//     if(loadedSurface == NULL)
-//     {
-//         printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
-//     }
-//     else
-//     {
-//         // Converte a superficie para o tamanho da tela
-// 		optimizedSurface = SDL_ConvertSurface( loadedSurface, gScreenSurface->format, 0 );
-// 		if( optimizedSurface == NULL )
-// 		{
-// 			printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
-// 		}
-        
-//         // Libera superficie temporaria
-// 		SDL_FreeSurface( loadedSurface );
-// 	}
-
-// 	return optimizedSurface;
-// }
-
 void close() {
     // Libera imagem carregada
     SDL_DestroyTexture(gTexture);
@@ -232,7 +232,7 @@ int main( int argc, char* args[] ) {
             SDL_Event e;
 
             // Seta a textura atual como a default
-            gTexture = gKeyPressTextures[KEY_PRESS_TEXTURE_DEFAULT];
+            // gTexture = gKeyPressTextures[KEY_PRESS_TEXTURE_DEFAULT];
 
             while( !quit )
             {
@@ -267,14 +267,38 @@ int main( int argc, char* args[] ) {
                             break;
 
                             default:
-                            gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ];
+                            // gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ];
+                            gTexture = NULL;
                             break;
                         }
                     }
                 }
 
+                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
                 // Limpa a tela
                 SDL_RenderClear(gRenderer);
+
+                // Renderiza um retangulo vermelho
+                SDL_Rect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+                SDL_RenderFillRect(gRenderer, &fillRect);
+
+                // Renderiza um contorno de retangulo verde
+                SDL_Rect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0xFF, 0x00, 0xFF );        
+                SDL_RenderDrawRect( gRenderer, &outlineRect );
+
+                 // Renderiza linha horizontal azul
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );        
+                SDL_RenderDrawLine( gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+
+                // Renderiza pontilhado amarelo vertical
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0x00, 0xFF );
+                for( int i = 0; i < SCREEN_HEIGHT; i += 4 )
+                {
+                    SDL_RenderDrawPoint( gRenderer, SCREEN_WIDTH / 2, i );
+                }
 
                 // Renderiza textura na tela
                 SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
