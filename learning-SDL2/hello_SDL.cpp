@@ -232,7 +232,7 @@ int main( int argc, char* args[] ) {
             SDL_Event e;
 
             // Seta a textura atual como a default
-            // gTexture = gKeyPressTextures[KEY_PRESS_TEXTURE_DEFAULT];
+            // gTexture = gKeyPresssTextures[KEY_PRESS_TEXTURE_DEFAULT];
 
             while( !quit )
             {
@@ -267,38 +267,72 @@ int main( int argc, char* args[] ) {
                             break;
 
                             default:
-                            // gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ];
-                            gTexture = NULL;
+                            gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ];
+                            // gTexture = NULL;
                             break;
                         }
                     }
                 }
 
-                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                // SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
                 // Limpa a tela
                 SDL_RenderClear(gRenderer);
 
-                // Renderiza um retangulo vermelho
-                SDL_Rect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
-                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
-                SDL_RenderFillRect(gRenderer, &fillRect);
+                // Criando um viewport superior esquerdo
+                SDL_Rect topLeftViewport;
+                topLeftViewport.x = 0;
+                topLeftViewport.y = 0;
+                topLeftViewport.w = SCREEN_WIDTH / 2;
+                topLeftViewport.h = SCREEN_HEIGHT / 2;
+                SDL_RenderSetViewport( gRenderer, &topLeftViewport );
 
-                // Renderiza um contorno de retangulo verde
-                SDL_Rect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
-                SDL_SetRenderDrawColor( gRenderer, 0x00, 0xFF, 0x00, 0xFF );        
-                SDL_RenderDrawRect( gRenderer, &outlineRect );
+                gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_LEFT ];
+                SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 
-                 // Renderiza linha horizontal azul
-                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );        
-                SDL_RenderDrawLine( gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+                // Criando um viewport superior direito
+                SDL_Rect topRightViewport;
+                topRightViewport.x = SCREEN_WIDTH / 2;
+                topRightViewport.y = 0;
+                topRightViewport.w = SCREEN_WIDTH / 2;
+                topRightViewport.h = SCREEN_HEIGHT / 2;
+                SDL_RenderSetViewport( gRenderer, &topRightViewport );
 
-                // Renderiza pontilhado amarelo vertical
-                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0x00, 0xFF );
-                for( int i = 0; i < SCREEN_HEIGHT; i += 4 )
-                {
-                    SDL_RenderDrawPoint( gRenderer, SCREEN_WIDTH / 2, i );
-                }
+                gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_RIGHT ];
+                SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+
+                // Criando um viewport inferior
+                SDL_Rect bottomViewport;
+                bottomViewport.x = 0;
+                bottomViewport.y = SCREEN_HEIGHT / 2;
+                bottomViewport.w = SCREEN_WIDTH;
+                bottomViewport.h = SCREEN_HEIGHT / 2;
+                SDL_RenderSetViewport(gRenderer, &bottomViewport);
+
+                gTexture = gKeyPressTextures[ KEY_PRESS_TEXTURE_DOWN ];
+                SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+
+                // desenhando formas geometricas basicas
+                // // Renderiza um retangulo vermelho
+                // SDL_Rect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+                // SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+                // SDL_RenderFillRect(gRenderer, &fillRect);
+
+                // // Renderiza um contorno de retangulo verde
+                // SDL_Rect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
+                // SDL_SetRenderDrawColor( gRenderer, 0x00, 0xFF, 0x00, 0xFF );        
+                // SDL_RenderDrawRect( gRenderer, &outlineRect );
+
+                //  // Renderiza linha horizontal azul
+                // SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );        
+                // SDL_RenderDrawLine( gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+
+                // // Renderiza pontilhado amarelo vertical
+                // SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0x00, 0xFF );
+                // for( int i = 0; i < SCREEN_HEIGHT; i += 4 )
+                // {
+                //     SDL_RenderDrawPoint( gRenderer, SCREEN_WIDTH / 2, i );
+                // }
 
                 // Renderiza textura na tela
                 SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
