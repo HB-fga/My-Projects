@@ -31,6 +31,12 @@ class LTexture
 		// Define modulação de cores
 		void setColor(Uint8 red, Uint8 green, Uint8 blue);
 
+		// Define blending
+        void setBlendMode( SDL_BlendMode blending );
+
+        // Define modulacao alpha
+        void setAlpha( Uint8 alpha );
+
         // Renderiza textura no ponto dado
         void render(int x, int y, SDL_Rect* clip = NULL);
 
@@ -58,6 +64,8 @@ SDL_Renderer* gRenderer = NULL;
 SDL_Rect gSpriteClips[ 4 ];
 LTexture gSpriteSheetTexture;
 LTexture gModulatedTexture;
+LTexture gBGFade;
+LTexture gFade;
 
 LTexture::LTexture()
 {
@@ -124,6 +132,18 @@ void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue )
 {
     // Modula Textura
     SDL_SetTextureColorMod( mTexture, red, green, blue );
+}
+
+void LTexture::setBlendMode( SDL_BlendMode blending )
+{
+    // Define Blending
+    SDL_SetTextureBlendMode( mTexture, blending );
+}
+        
+void LTexture::setAlpha( Uint8 alpha )
+{
+    // Modula alpha da textura
+    SDL_SetTextureAlphaMod( mTexture, alpha );
 }
 
 void LTexture::render( int x, int y, SDL_Rect* clip )
@@ -209,6 +229,18 @@ bool loadMedia()
 		success = false;
 	}
 
+	if( !gFade.loadFromFile( "fade.png" ) )
+	{
+		printf( "Failed to load colors texture!\n" );
+		success = false;
+	}
+
+	if( !gBGFade.loadFromFile( "bg-fade.png" ) )
+	{
+		printf( "Failed to load colors texture!\n" );
+		success = false;
+	}
+
 	// Carrega textura do sprite sheet
 	if( !gSpriteSheetTexture.loadFromFile( "dots.png" ) )
 	{
@@ -248,6 +280,9 @@ bool loadMedia()
 void close()
 {
 	gSpriteSheetTexture.free();
+	gModulatedTexture.free();
+	gBGFade.free();
+	gFade.free();
 
 	SDL_DestroyRenderer( gRenderer );
 	SDL_DestroyWindow( gWindow );
@@ -281,6 +316,8 @@ int main( int argc, char* args[] )
             Uint8 g = 255;
             Uint8 b = 255;
 
+			Uint8 a = 255;
+
 			while( !quit )
 			{
 				while( SDL_PollEvent( &e ) != 0 )
@@ -289,42 +326,72 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
-					//  Muda os valores rgb com as teclas qwe asd
                     else if( e.type == SDL_KEYDOWN )
                     {
-                        switch( e.key.keysym.sym )
+                        // Aumenta alpha com W
+                        if( e.key.keysym.sym == SDLK_w )
                         {
-                            // + vermelho
-                            case SDLK_q:
-                            r += 32;
-                            break;
-                            
-                            // + verde
-                            case SDLK_w:
-                            g += 32;
-                            break;
-                            
-                            // + azul
-                            case SDLK_e:
-                            b += 32;
-                            break;
-                            
-                            // - vermelho
-                            case SDLK_a:
-                            r -= 32;
-                            break;
-                            
-                            // - verde
-                            case SDLK_s:
-                            g -= 32;
-                            break;
-                            
-                            // - azul
-                            case SDLK_d:
-                            b -= 32;
-                            break;
+                            // Maximo em 255
+                            if( a + 8 > 255 )
+                            {
+                                a = 255;
+                            }
+                            else
+                            {
+                                a += 8;
+                            }
+                        }
+                        // Diminui alpha com S
+                        else if( e.key.keysym.sym == SDLK_s )
+                        {
+                            // Minimo em 0
+                            if( a - 8 < 0 )
+                            {
+                                a = 0;
+                            }
+                            else
+                            {
+                                a -= 8;
+                            }
                         }
                     }
+					// aula 12 color modulation
+					// //  Muda os valores rgb com as teclas qwe asd
+                    // else if( e.type == SDL_KEYDOWN )
+                    // {
+                    //     switch( e.key.keysym.sym )
+                    //     {
+                    //         // + vermelho
+                    //         case SDLK_q:
+                    //         r += 32;
+                    //         break;
+                            
+                    //         // + verde
+                    //         case SDLK_w:
+                    //         g += 32;
+                    //         break;
+                            
+                    //         // + azul
+                    //         case SDLK_e:
+                    //         b += 32;
+                    //         break;
+                            
+                    //         // - vermelho
+                    //         case SDLK_a:
+                    //         r -= 32;
+                    //         break;
+                            
+                    //         // - verde
+                    //         case SDLK_s:
+                    //         g -= 32;
+                    //         break;
+                            
+                    //         // - azul
+                    //         case SDLK_d:
+                    //         b -= 32;
+                    //         break;
+                    //     }
+                    // }
 				}
 
 				// Limpa tela
@@ -337,10 +404,18 @@ int main( int argc, char* args[] )
 				// gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 1 ].w, 0, &gSpriteClips[ 1 ] );
 				// gSpriteSheetTexture.render( 0, SCREEN_HEIGHT - gSpriteClips[ 2 ].h, &gSpriteClips[ 2 ] );
 				// gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 3 ].w, SCREEN_HEIGHT - gSpriteClips[ 3 ].h, &gSpriteClips[ 3 ] );
+				
+				// aula 12 color modulation
+				// // Modula e renderiza textura
+				// gModulatedTexture.setColor(r, g, b);
+				// gModulatedTexture.render(0, 0);
 
-				// Modula e renderiza textura
-				gModulatedTexture.setColor(r, g, b);
-				gModulatedTexture.render(0, 0);
+				// Renderiza fundo
+                gBGFade.render( 0, 0 );
+
+                // Renderiza frente
+                gFade.setAlpha( a );
+                gFade.render( 0, 0 );
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
