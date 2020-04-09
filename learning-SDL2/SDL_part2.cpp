@@ -23,13 +23,16 @@ class LTexture
         ~LTexture();
 
         // Carrega imagem
-        bool loadFromFile( std::string path );
+        bool loadFromFile(std::string path);
 
         // Desaloca textura
         void free();
 
+		// Define modulação de cores
+		void setColor(Uint8 red, Uint8 green, Uint8 blue);
+
         // Renderiza textura no ponto dado
-        void render( int x, int y, SDL_Rect* clip = NULL );
+        void render(int x, int y, SDL_Rect* clip = NULL);
 
         int getWidth();
         int getHeight();
@@ -54,6 +57,7 @@ SDL_Renderer* gRenderer = NULL;
 // Sprites da cena
 SDL_Rect gSpriteClips[ 4 ];
 LTexture gSpriteSheetTexture;
+LTexture gModulatedTexture;
 
 LTexture::LTexture()
 {
@@ -114,6 +118,12 @@ void LTexture::free()
 		mWidth = 0;
 		mHeight = 0;
 	}
+}
+
+void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue )
+{
+    // Modula Textura
+    SDL_SetTextureColorMod( mTexture, red, green, blue );
 }
 
 void LTexture::render( int x, int y, SDL_Rect* clip )
@@ -193,6 +203,12 @@ bool loadMedia()
 {
 	bool success = true;
 
+	if( !gModulatedTexture.loadFromFile( "colors.png" ) )
+	{
+		printf( "Failed to load colors texture!\n" );
+		success = false;
+	}
+
 	// Carrega textura do sprite sheet
 	if( !gSpriteSheetTexture.loadFromFile( "dots.png" ) )
 	{
@@ -260,6 +276,11 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
+			// Componentes de modulacao
+            Uint8 r = 255;
+            Uint8 g = 255;
+            Uint8 b = 255;
+
 			while( !quit )
 			{
 				while( SDL_PollEvent( &e ) != 0 )
@@ -268,17 +289,58 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
+					//  Muda os valores rgb com as teclas qwe asd
+                    else if( e.type == SDL_KEYDOWN )
+                    {
+                        switch( e.key.keysym.sym )
+                        {
+                            // + vermelho
+                            case SDLK_q:
+                            r += 32;
+                            break;
+                            
+                            // + verde
+                            case SDLK_w:
+                            g += 32;
+                            break;
+                            
+                            // + azul
+                            case SDLK_e:
+                            b += 32;
+                            break;
+                            
+                            // - vermelho
+                            case SDLK_a:
+                            r -= 32;
+                            break;
+                            
+                            // - verde
+                            case SDLK_s:
+                            g -= 32;
+                            break;
+                            
+                            // - azul
+                            case SDLK_d:
+                            b -= 32;
+                            break;
+                        }
+                    }
 				}
 
 				// Limpa tela
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 
-                // Renderiza sprites
-				gSpriteSheetTexture.render( 0, 0, &gSpriteClips[ 0 ] );
-				gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 1 ].w, 0, &gSpriteClips[ 1 ] );
-				gSpriteSheetTexture.render( 0, SCREEN_HEIGHT - gSpriteClips[ 2 ].h, &gSpriteClips[ 2 ] );
-				gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 3 ].w, SCREEN_HEIGHT - gSpriteClips[ 3 ].h, &gSpriteClips[ 3 ] );
+				// Aula 11 Sprite Sheets
+                // // Renderiza sprites
+				// gSpriteSheetTexture.render( 0, 0, &gSpriteClips[ 0 ] );
+				// gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 1 ].w, 0, &gSpriteClips[ 1 ] );
+				// gSpriteSheetTexture.render( 0, SCREEN_HEIGHT - gSpriteClips[ 2 ].h, &gSpriteClips[ 2 ] );
+				// gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 3 ].w, SCREEN_HEIGHT - gSpriteClips[ 3 ].h, &gSpriteClips[ 3 ] );
+
+				// Modula e renderiza textura
+				gModulatedTexture.setColor(r, g, b);
+				gModulatedTexture.render(0, 0);
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
