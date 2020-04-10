@@ -38,7 +38,7 @@ class LTexture
         void setAlpha( Uint8 alpha );
 
         // Renderiza textura no ponto dado
-        void render(int x, int y, SDL_Rect* clip = NULL);
+        void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip = SDL_FLIP_NONE);
 
         int getWidth();
         int getHeight();
@@ -60,17 +60,20 @@ SDL_Window* gWindow = NULL;
 // Renderizador
 SDL_Renderer* gRenderer = NULL;
 
-// Animacao de caminhada, SS = Sprite Sheet
-const int WALKING_ANIMATION_FRAMES = 4;
-SDL_Rect gWalkingSpriteClips[ WALKING_ANIMATION_FRAMES ];
-LTexture gWalkingSSTexture;
-
 // Sprites da cena
 SDL_Rect gSpriteClips[ 4 ];
 LTexture gSpriteSheetTexture;
 LTexture gModulatedTexture;
 LTexture gBGFade;
 LTexture gFade;
+
+// Animacao de caminhada, SS = Sprite Sheet
+const int WALKING_ANIMATION_FRAMES = 4;
+SDL_Rect gWalkingSpriteClips[ WALKING_ANIMATION_FRAMES ];
+LTexture gWalkingSSTexture;
+
+// Sprite de seta
+LTexture gArrowSprite;
 
 LTexture::LTexture()
 {
@@ -151,7 +154,7 @@ void LTexture::setAlpha( Uint8 alpha )
     SDL_SetTextureAlphaMod( mTexture, alpha );
 }
 
-void LTexture::render( int x, int y, SDL_Rect* clip )
+void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip )
 {
 	// Seta espaco de renderizacao e renderiza na tela
 	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
@@ -164,7 +167,7 @@ void LTexture::render( int x, int y, SDL_Rect* clip )
 	}
 
 	// Renderiza na tela
-	SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
+	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 }
 
 int LTexture::getWidth()
@@ -310,6 +313,12 @@ bool loadMedia()
         gWalkingSpriteClips[ 3 ].h = 205;
     }
 
+	if( !gArrowSprite.loadFromFile("arrow.png"))
+	{
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+
 	return success;
 }
 
@@ -347,6 +356,12 @@ int main( int argc, char* args[] )
 			bool quit = false;
 
 			SDL_Event e;
+
+			// Angulo de rotacao
+			double degrees = 0;
+
+			// Tipo de "flip"
+			SDL_RendererFlip flipType = SDL_FLIP_NONE;
 
 			// Atual frame da animacao
 			int frame = 0;
@@ -437,6 +452,33 @@ int main( int argc, char* args[] )
                     //         break;
                     //     }
                     // }
+
+					else if(e.type == SDL_KEYDOWN)
+					{
+						switch(e.key.keysym.sym)
+						{
+							case SDLK_a:
+								degrees -= 60;
+								break;
+                            
+                            case SDLK_d:
+								degrees += 60;
+								break;
+
+                            case SDLK_q:
+								flipType = SDL_FLIP_HORIZONTAL;
+								break;
+
+                            case SDLK_w:
+								flipType = SDL_FLIP_NONE;
+								break;
+
+                            case SDLK_e:
+								flipType = SDL_FLIP_VERTICAL;
+								break;
+						}
+					}
+
 				}
 
 				// Limpa tela
@@ -464,17 +506,21 @@ int main( int argc, char* args[] )
                 // gFade.render( 0, 0 );
 
 				// Aula 14 animated sprites
-				SDL_Rect* currentClip = &gWalkingSpriteClips[frame / 4];
-				gWalkingSSTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
+				// SDL_Rect* currentClip = &gWalkingSpriteClips[frame / 4];
+				// gWalkingSSTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
+
+				// // Seletor de frames
+				// ++frame;
+
+				// if(frame / 4 >= WALKING_ANIMATION_FRAMES)
+				// 	frame = 0;
+
+				// Aula 15 rotation and flipping
+				gArrowSprite.render((SCREEN_WIDTH - gArrowSprite.getWidth()) / 2, (SCREEN_HEIGHT - gArrowSprite.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
-
-				// Seletor de frames
-				++frame;
-
-				if(frame / 4 >= WALKING_ANIMATION_FRAMES)
-					frame = 0;
+				
 			}
 		}
 	}
