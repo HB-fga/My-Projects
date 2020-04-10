@@ -60,6 +60,11 @@ SDL_Window* gWindow = NULL;
 // Renderizador
 SDL_Renderer* gRenderer = NULL;
 
+// Animacao de caminhada, SS = Sprite Sheet
+const int WALKING_ANIMATION_FRAMES = 4;
+SDL_Rect gWalkingSpriteClips[ WALKING_ANIMATION_FRAMES ];
+LTexture gWalkingSSTexture;
+
 // Sprites da cena
 SDL_Rect gSpriteClips[ 4 ];
 LTexture gSpriteSheetTexture;
@@ -196,7 +201,7 @@ bool init()
 		}
 		else
 		{
-			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
+			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
 			if( gRenderer == NULL )
 			{
 				printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -222,24 +227,6 @@ bool init()
 bool loadMedia()
 {
 	bool success = true;
-
-	if( !gModulatedTexture.loadFromFile( "colors.png" ) )
-	{
-		printf( "Failed to load colors texture!\n" );
-		success = false;
-	}
-
-	if( !gFade.loadFromFile( "fade.png" ) )
-	{
-		printf( "Failed to load colors texture!\n" );
-		success = false;
-	}
-
-	if( !gBGFade.loadFromFile( "bg-fade.png" ) )
-	{
-		printf( "Failed to load colors texture!\n" );
-		success = false;
-	}
 
 	// Carrega textura do sprite sheet
 	if( !gSpriteSheetTexture.loadFromFile( "dots.png" ) )
@@ -274,6 +261,55 @@ bool loadMedia()
 		gSpriteClips[ 3 ].h = 100;
 	}
 
+	// Carrega textura RGB
+	if( !gModulatedTexture.loadFromFile( "colors.png" ) )
+	{
+		printf( "Failed to load colors texture!\n" );
+		success = false;
+	}
+
+	// Carrega textura Alpha Blending
+	if( !gFade.loadFromFile( "fade.png" ) )
+	{
+		printf( "Failed to load colors texture!\n" );
+		success = false;
+	}
+	if( !gBGFade.loadFromFile( "bg-fade.png" ) )
+	{
+		printf( "Failed to load colors texture!\n" );
+		success = false;
+	}
+
+	// Carrega sprite sheet da caminhada
+    if( !gWalkingSSTexture.loadFromFile( "walking-guy.png" ) )
+    {
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+    else
+    {
+        // Define cortes
+        gWalkingSpriteClips[ 0 ].x =   0;
+        gWalkingSpriteClips[ 0 ].y =   0;
+        gWalkingSpriteClips[ 0 ].w =  64;
+        gWalkingSpriteClips[ 0 ].h = 205;
+
+        gWalkingSpriteClips[ 1 ].x =  64;
+        gWalkingSpriteClips[ 1 ].y =   0;
+        gWalkingSpriteClips[ 1 ].w =  64;
+        gWalkingSpriteClips[ 1 ].h = 205;
+        
+        gWalkingSpriteClips[ 2 ].x = 128;
+        gWalkingSpriteClips[ 2 ].y =   0;
+        gWalkingSpriteClips[ 2 ].w =  64;
+        gWalkingSpriteClips[ 2 ].h = 205;
+
+        gWalkingSpriteClips[ 3 ].x = 196;
+        gWalkingSpriteClips[ 3 ].y =   0;
+        gWalkingSpriteClips[ 3 ].w =  64;
+        gWalkingSpriteClips[ 3 ].h = 205;
+    }
+
 	return success;
 }
 
@@ -283,6 +319,7 @@ void close()
 	gModulatedTexture.free();
 	gBGFade.free();
 	gFade.free();
+	gWalkingSSTexture.free();
 
 	SDL_DestroyRenderer( gRenderer );
 	SDL_DestroyWindow( gWindow );
@@ -311,6 +348,9 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
+			// Atual frame da animacao
+			int frame = 0;
+
 			// Componentes de modulacao
             Uint8 r = 255;
             Uint8 g = 255;
@@ -326,35 +366,40 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
-                    else if( e.type == SDL_KEYDOWN )
-                    {
-                        // Aumenta alpha com W
-                        if( e.key.keysym.sym == SDLK_w )
-                        {
-                            // Maximo em 255
-                            if( a + 8 > 255 )
-                            {
-                                a = 255;
-                            }
-                            else
-                            {
-                                a += 8;
-                            }
-                        }
-                        // Diminui alpha com S
-                        else if( e.key.keysym.sym == SDLK_s )
-                        {
-                            // Minimo em 0
-                            if( a - 8 < 0 )
-                            {
-                                a = 0;
-                            }
-                            else
-                            {
-                                a -= 8;
-                            }
-                        }
-                    }
+
+
+                    // Aula 13 alpha blending
+					// else if( e.type == SDL_KEYDOWN )
+                    // {
+                    //     // Aumenta alpha com W
+                    //     if( e.key.keysym.sym == SDLK_w )
+                    //     {
+                    //         // Maximo em 255
+                    //         if( a + 8 > 255 )
+                    //         {
+                    //             a = 255;
+                    //         }
+                    //         else
+                    //         {
+                    //             a += 8;
+                    //         }
+                    //     }
+                    //     // Diminui alpha com S
+                    //     else if( e.key.keysym.sym == SDLK_s )
+                    //     {
+                    //         // Minimo em 0
+                    //         if( a - 8 < 0 )
+                    //         {
+                    //             a = 0;
+                    //         }
+                    //         else
+                    //         {
+                    //             a -= 8;
+                    //         }
+                    //     }
+                    // }
+
+
 					// aula 12 color modulation
 					// //  Muda os valores rgb com as teclas qwe asd
                     // else if( e.type == SDL_KEYDOWN )
@@ -405,20 +450,31 @@ int main( int argc, char* args[] )
 				// gSpriteSheetTexture.render( 0, SCREEN_HEIGHT - gSpriteClips[ 2 ].h, &gSpriteClips[ 2 ] );
 				// gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 3 ].w, SCREEN_HEIGHT - gSpriteClips[ 3 ].h, &gSpriteClips[ 3 ] );
 				
-				// aula 12 color modulation
+				// Aula 12 color modulation
 				// // Modula e renderiza textura
 				// gModulatedTexture.setColor(r, g, b);
 				// gModulatedTexture.render(0, 0);
 
-				// Renderiza fundo
-                gBGFade.render( 0, 0 );
+				// Aula 13 alpha blending
+				// // Renderiza fundo
+                // gBGFade.render( 0, 0 );
 
-                // Renderiza frente
-                gFade.setAlpha( a );
-                gFade.render( 0, 0 );
+                // // Renderiza frente
+                // gFade.setAlpha( a );
+                // gFade.render( 0, 0 );
+
+				// Aula 14 animated sprites
+				SDL_Rect* currentClip = &gWalkingSpriteClips[frame / 4];
+				gWalkingSSTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
+
+				// Seletor de frames
+				++frame;
+
+				if(frame / 4 >= WALKING_ANIMATION_FRAMES)
+					frame = 0;
 			}
 		}
 	}
