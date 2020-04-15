@@ -3,8 +3,10 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <string>
+#include <cmath>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -24,6 +26,9 @@ class LTexture
 
         // Carrega imagem
         bool loadFromFile(std::string path);
+
+		// Cria imagem a partir de string de fonte
+		bool loadFromRenderedText(std::string textureText, SDL_Color textColor);
 
         // Desaloca textura
         void free();
@@ -60,12 +65,21 @@ SDL_Window* gWindow = NULL;
 // Renderizador
 SDL_Renderer* gRenderer = NULL;
 
+// Fonte global
+TTF_Font *gFont = NULL;
+
+
+
 // Sprites da cena
 SDL_Rect gSpriteClips[ 4 ];
 LTexture gSpriteSheetTexture;
+
 LTexture gModulatedTexture;
+
 LTexture gBGFade;
 LTexture gFade;
+
+LTexture gTextTexture;
 
 // Animacao de caminhada, SS = Sprite Sheet
 const int WALKING_ANIMATION_FRAMES = 4;
@@ -122,6 +136,36 @@ bool LTexture::loadFromFile( std::string path )
 	}
 
 	mTexture = newTexture;
+	return mTexture != NULL;
+}
+
+bool LTexture::loadFromRenderedText(std::string textureText, SDL_Color textColor)
+{
+	free();
+
+	//	Renderiza text surface
+	SDL_Surface* textSurface = TTF_RenderText_Solid(gFont, textureText.c_str(), textColor);
+	if(textSurface == NULL)
+	{
+		printf( "Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError() );
+    }
+    else
+    {
+        // Cria textura a partir da surface
+		mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
+		if(mTexture == NULL)
+		{
+            printf( "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError() );
+        }
+        else
+        {
+            mWidth = textSurface->w;
+            mHeight = textSurface->h;
+        }
+
+		SDL_FreeSurface(textSurface);
+	}
+
 	return mTexture != NULL;
 }
 
@@ -220,6 +264,12 @@ bool init()
 					printf( "SDL_image could not initialize! SDL_mage Error: %s\n", IMG_GetError() );
 					success = false;
 				}
+
+                if( TTF_Init() == -1 )
+                {
+                    printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
+                    success = false;
+                }
 			}
 		}
 	}
@@ -319,22 +369,45 @@ bool loadMedia()
         success = false;
     }
 
+	// Abre a fonte
+	gFont = TTF_OpenFont("font.ttf", 28);
+	if(gFont == NULL)
+	{
+		printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
+        success = false;
+	}
+	else
+	{
+		// Renderiza texto
+		SDL_Color textColor = {0, 0, 0};
+		if(!gTextTexture.loadFromRenderedText("The quick brown fox jumps over the lazy dog!", textColor))
+		{
+			printf( "Failed to render text texture!\n" );
+            success = false;
+		}
+	}
+
 	return success;
 }
 
 void close()
 {
+	gTextTexture.free();
 	gSpriteSheetTexture.free();
 	gModulatedTexture.free();
 	gBGFade.free();
 	gFade.free();
 	gWalkingSSTexture.free();
 
+	TTF_CloseFont( gFont );
+	gFont = NULL;
+
 	SDL_DestroyRenderer( gRenderer );
 	SDL_DestroyWindow( gWindow );
 	gWindow = NULL;
 	gRenderer = NULL;
 
+	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
 }
@@ -453,31 +526,32 @@ int main( int argc, char* args[] )
                     //     }
                     // }
 
-					else if(e.type == SDL_KEYDOWN)
-					{
-						switch(e.key.keysym.sym)
-						{
-							case SDLK_a:
-								degrees -= 60;
-								break;
+					// aula 15 rotation and flipping
+					// else if(e.type == SDL_KEYDOWN)
+					// {
+					// 	switch(e.key.keysym.sym)
+					// 	{
+					// 		case SDLK_a:
+					// 			degrees -= 60;
+					// 			break;
                             
-                            case SDLK_d:
-								degrees += 60;
-								break;
+                    //         case SDLK_d:
+					// 			degrees += 60;
+					// 			break;
 
-                            case SDLK_q:
-								flipType = SDL_FLIP_HORIZONTAL;
-								break;
+                    //         case SDLK_q:
+					// 			flipType = SDL_FLIP_HORIZONTAL;
+					// 			break;
 
-                            case SDLK_w:
-								flipType = SDL_FLIP_NONE;
-								break;
+                    //         case SDLK_w:
+					// 			flipType = SDL_FLIP_NONE;
+					// 			break;
 
-                            case SDLK_e:
-								flipType = SDL_FLIP_VERTICAL;
-								break;
-						}
-					}
+                    //         case SDLK_e:
+					// 			flipType = SDL_FLIP_VERTICAL;
+					// 			break;
+					// 	}
+					// }
 
 				}
 
@@ -516,7 +590,9 @@ int main( int argc, char* args[] )
 				// 	frame = 0;
 
 				// Aula 15 rotation and flipping
-				gArrowSprite.render((SCREEN_WIDTH - gArrowSprite.getWidth()) / 2, (SCREEN_HEIGHT - gArrowSprite.getHeight()) / 2, NULL, degrees, NULL, flipType);
+				// gArrowSprite.render((SCREEN_WIDTH - gArrowSprite.getWidth()) / 2, (SCREEN_HEIGHT - gArrowSprite.getHeight()) / 2, NULL, degrees, NULL, flipType);
+
+				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
