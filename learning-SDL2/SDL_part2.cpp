@@ -11,6 +11,20 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+// Constantes dos botoes
+const int BUTTON_WIDTH = 300;
+const int BUTTON_HEIGHT = 200;
+const int TOTAL_BUTTONS = 4;
+
+enum LButtonSprite
+{
+	BUTTON_SPRITE_MOUSE_OUT = 0,
+    BUTTON_SPRITE_MOUSE_OVER_MOTION = 1,
+    BUTTON_SPRITE_MOUSE_DOWN = 2,
+    BUTTON_SPRITE_MOUSE_UP = 3,
+    BUTTON_SPRITE_TOTAL = 4
+};
+
 class LTexture
 {
     private:
@@ -27,8 +41,10 @@ class LTexture
         // Carrega imagem
         bool loadFromFile(std::string path);
 
+		#if defined(_SDL_TTF_H) || defined(SDL_TTF_H)
 		// Cria imagem a partir de string de fonte
 		bool loadFromRenderedText(std::string textureText, SDL_Color textColor);
+		#endif
 
         // Desaloca textura
         void free();
@@ -50,6 +66,26 @@ class LTexture
     
 };
 
+class LButton
+{
+	private:
+		// posicao superior esquerda
+		SDL_Point mPosition;
+
+		// sprite global atualmente usado
+		LButtonSprite mCurrentSprite;
+	public:
+		LButton();
+
+		// Define posicao superior esquerda
+		void setPosition(int x, int y);
+
+		// Lida com eventos do mouse
+		void handleEvent(SDL_Event* e);
+
+		void render();
+};
+
 // Inicia SDL
 bool init();
 
@@ -68,8 +104,6 @@ SDL_Renderer* gRenderer = NULL;
 // Fonte global
 TTF_Font *gFont = NULL;
 
-
-
 // Sprites da cena
 SDL_Rect gSpriteClips[ 4 ];
 LTexture gSpriteSheetTexture;
@@ -80,6 +114,11 @@ LTexture gBGFade;
 LTexture gFade;
 
 LTexture gTextTexture;
+
+LTexture gButtonSpriteSheetTexture;
+SDL_Rect gButtonSpriteClips[BUTTON_SPRITE_TOTAL];
+
+LButton gButtons[TOTAL_BUTTONS];
 
 // Animacao de caminhada, SS = Sprite Sheet
 const int WALKING_ANIMATION_FRAMES = 4;
@@ -139,6 +178,7 @@ bool LTexture::loadFromFile( std::string path )
 	return mTexture != NULL;
 }
 
+#if defined(_SDL_TTF_H) || defined(SDL_TTF_H)
 bool LTexture::loadFromRenderedText(std::string textureText, SDL_Color textColor)
 {
 	free();
@@ -168,6 +208,7 @@ bool LTexture::loadFromRenderedText(std::string textureText, SDL_Color textColor
 
 	return mTexture != NULL;
 }
+#endif
 
 void LTexture::free()
 {
@@ -222,6 +263,67 @@ int LTexture::getWidth()
 int LTexture::getHeight()
 {
 	return mHeight;
+}
+
+LButton::LButton()
+{
+	mPosition.x = 0;
+	mPosition.y = 0;
+
+	mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
+}
+
+void LButton::setPosition(int x, int y)
+{
+	mPosition.x = x;
+	mPosition.y = y;
+}
+
+void LButton::handleEvent(SDL_Event* e)
+{
+	// se acontecer um evento de mouse
+	if(e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
+	{
+		int x, y;
+		SDL_GetMouseState(&x, &y);
+
+		bool inside = true;
+
+		if(x < mPosition.x || x > mPosition.x + BUTTON_WIDTH || y < mPosition.y || y > mPosition.y + BUTTON_HEIGHT)
+		{
+			inside = false;
+		}
+
+		// mouse fora
+		if( !inside )
+        {
+            mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
+        }
+        // mouse dentro
+        else
+        {
+            switch( e->type )
+            {
+                case SDL_MOUSEMOTION:
+                mCurrentSprite = BUTTON_SPRITE_MOUSE_OVER_MOTION;
+                break;
+            
+                case SDL_MOUSEBUTTONDOWN:
+                mCurrentSprite = BUTTON_SPRITE_MOUSE_DOWN;
+                break;
+                
+                case SDL_MOUSEBUTTONUP:
+                mCurrentSprite = BUTTON_SPRITE_MOUSE_UP;
+                break;
+            }
+        }
+
+	}
+}
+
+void LButton::render()
+{
+    gButtonSpriteSheetTexture.render( mPosition.x, mPosition.y, &gButtonSpriteClips[ mCurrentSprite ] );
 }
 
 bool init()
@@ -387,6 +489,39 @@ bool loadMedia()
 		}
 	}
 
+	if(!gButtonSpriteSheetTexture.loadFromFile("button.png"))
+	{
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+    else
+    {
+        gButtonSpriteClips[ 0 ].x = 0;
+        gButtonSpriteClips[ 0 ].y = 0;
+        gButtonSpriteClips[ 0 ].w = BUTTON_WIDTH;
+        gButtonSpriteClips[ 0 ].h = BUTTON_HEIGHT;
+
+        gButtonSpriteClips[ 1 ].x = 0;
+        gButtonSpriteClips[ 1 ].y = BUTTON_HEIGHT;
+        gButtonSpriteClips[ 1 ].w = BUTTON_WIDTH;
+        gButtonSpriteClips[ 1 ].h = BUTTON_HEIGHT;
+        
+        gButtonSpriteClips[ 2 ].x = 0;
+        gButtonSpriteClips[ 2 ].y = BUTTON_HEIGHT * 2;
+        gButtonSpriteClips[ 2 ].w = BUTTON_WIDTH;
+        gButtonSpriteClips[ 2 ].h = BUTTON_HEIGHT;
+
+        gButtonSpriteClips[ 3 ].x = 0;
+        gButtonSpriteClips[ 3 ].y = BUTTON_HEIGHT * 3;
+        gButtonSpriteClips[ 3 ].w = BUTTON_WIDTH;
+        gButtonSpriteClips[ 3 ].h = BUTTON_HEIGHT;
+    }
+
+	gButtons[ 0 ].setPosition( 0, 0 );
+	gButtons[ 1 ].setPosition( SCREEN_WIDTH - BUTTON_WIDTH, 0 );
+	gButtons[ 2 ].setPosition( 0, SCREEN_HEIGHT - BUTTON_HEIGHT );
+	gButtons[ 3 ].setPosition( SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT );
+
 	return success;
 }
 
@@ -398,6 +533,7 @@ void close()
 	gBGFade.free();
 	gFade.free();
 	gWalkingSSTexture.free();
+	gButtonSpriteSheetTexture.free();
 
 	TTF_CloseFont( gFont );
 	gFont = NULL;
@@ -454,7 +590,6 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
-
 
                     // Aula 13 alpha blending
 					// else if( e.type == SDL_KEYDOWN )
@@ -553,6 +688,11 @@ int main( int argc, char* args[] )
 					// 	}
 					// }
 
+					for(int i = 0;i < TOTAL_BUTTONS;i++)
+					{
+						gButtons[i].handleEvent(&e);
+					}
+
 				}
 
 				// Limpa tela
@@ -592,7 +732,13 @@ int main( int argc, char* args[] )
 				// Aula 15 rotation and flipping
 				// gArrowSprite.render((SCREEN_WIDTH - gArrowSprite.getWidth()) / 2, (SCREEN_HEIGHT - gArrowSprite.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
-				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
+				// Aula 16 TTF
+				// gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
+
+				for(int i = 0;i < TOTAL_BUTTONS;i++)
+				{
+					gButtons[i].render();
+				}
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
