@@ -16,6 +16,9 @@ const int BUTTON_WIDTH = 300;
 const int BUTTON_HEIGHT = 200;
 const int TOTAL_BUTTONS = 4;
 
+//dead zone do analogico do gamepad
+const int JOYSTICK_DEAD_ZONE = 8000;
+
 enum LButtonSprite
 {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
@@ -113,6 +116,8 @@ LTexture gModulatedTexture;
 LTexture gBGFade;
 LTexture gFade;
 
+LTexture gArrowSprite;
+
 LTexture gTextTexture;
 
 LTexture gButtonSpriteSheetTexture;
@@ -131,8 +136,8 @@ const int WALKING_ANIMATION_FRAMES = 4;
 SDL_Rect gWalkingSpriteClips[ WALKING_ANIMATION_FRAMES ];
 LTexture gWalkingSSTexture;
 
-// Sprite de seta
-LTexture gArrowSprite;
+// handler do Gamepad 1
+SDL_Joystick* gGameController = NULL;
 
 LTexture::LTexture()
 {
@@ -336,7 +341,7 @@ bool init()
 {
 	bool success = true;
 
-	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_JOYSTICK ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
 		success = false;
@@ -346,6 +351,20 @@ bool init()
 		if( !SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" ) )
 		{
 			printf( "Warning: Linear texture filtering not enabled!" );
+		}
+
+		// Procura joysticks
+		if(SDL_NumJoysticks() < 1)
+		{
+			printf("Warning: No joysticks connected!\n");
+		}
+		else
+		{
+			gGameController = SDL_JoystickOpen(0);
+			if(gGameController == NULL)
+			{
+                printf( "Warning: Unable to open game controller! SDL Error: %s\n", SDL_GetError() );
+			}
 		}
 
 		gWindow = SDL_CreateWindow( "Uhuuu!!!", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
@@ -572,6 +591,9 @@ void close()
 	gLeftTexture.free();
 	gRightTexture.free();
 
+	SDL_JoystickClose(gGameController);
+	gGameController = NULL;
+
 	TTF_CloseFont( gFont );
 	gFont = NULL;
 
@@ -603,6 +625,10 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
+			// Direcao normalizada
+			int xDir = 0;
+			int yDir = 0;
+
 			// Textura renderizada atualmente
 			LTexture* currentTexture = NULL;
 
@@ -629,6 +655,45 @@ int main( int argc, char* args[] )
 					if( e.type == SDL_QUIT )
 					{
 						quit = true;
+					}
+					else if(e.type == SDL_JOYAXISMOTION)
+					{
+						// Movimento no controle 0
+						if( e.jaxis.which == 0)
+						{
+							// X axis
+							if(e.jaxis.axis == 0)
+							{
+								if(e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+								{
+									xDir = -1;
+								}
+								else if(e.jaxis.value > JOYSTICK_DEAD_ZONE)
+								{
+									xDir = 1;
+								}
+								else
+								{
+									xDir = 0;
+								}
+							}
+							// Y axis
+							else if( e.jaxis.axis == 1)
+							{
+								if( e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+								{
+									yDir = -1;
+								}
+								else if( e.jaxis.value > JOYSTICK_DEAD_ZONE)
+								{
+									yDir = 1;
+								}
+								else
+								{
+									yDir = 0;
+								}
+							}
+						}
 					}
 
                     // Aula 13 alpha blending
@@ -736,27 +801,28 @@ int main( int argc, char* args[] )
 
 				}
 
-				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-				if(currentKeyStates[SDL_SCANCODE_UP])
-				{
-					currentTexture = &gUpTexture;
-				}
-				else if(currentKeyStates[SDL_SCANCODE_DOWN])
-				{
-					currentTexture = &gDownTexture;
-				}
-				else if(currentKeyStates[SDL_SCANCODE_LEFT])
-				{
-					currentTexture = &gLeftTexture;
-				}
-				else if(currentKeyStates[SDL_SCANCODE_RIGHT])
-				{
-					currentTexture = &gRightTexture;
-				}
-				else
-				{
-					currentTexture = &gPressTexture;
-				}
+				// Aula 18 key states
+				// const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+				// if(currentKeyStates[SDL_SCANCODE_UP])
+				// {
+				// 	currentTexture = &gUpTexture;
+				// }
+				// else if(currentKeyStates[SDL_SCANCODE_DOWN])
+				// {
+				// 	currentTexture = &gDownTexture;
+				// }
+				// else if(currentKeyStates[SDL_SCANCODE_LEFT])
+				// {
+				// 	currentTexture = &gLeftTexture;
+				// }
+				// else if(currentKeyStates[SDL_SCANCODE_RIGHT])
+				// {
+				// 	currentTexture = &gRightTexture;
+				// }
+				// else
+				// {
+				// 	currentTexture = &gPressTexture;
+				// }
 
 				// Limpa tela
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
@@ -804,7 +870,21 @@ int main( int argc, char* args[] )
 				// 	gButtons[i].render();
 				// }
 
-				currentTexture->render(0, 0);
+				// Aula 18 key states
+				// currentTexture->render(0, 0);
+
+				// Aula 19 gamepads and joysticks
+
+				// Calcula Angulo
+				double joystickAngle = atan2( (double)yDir, (double)xDir ) * (180.0 / M_PI );
+
+				if(xDir == 0 && yDir == 0)
+				{
+					joystickAngle = 0;
+				}
+
+				// 
+				gArrowSprite.render( ( SCREEN_WIDTH - gArrowSprite.getWidth() ) / 2, ( SCREEN_HEIGHT - gArrowSprite.getHeight() ) / 2, NULL, joystickAngle );
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
