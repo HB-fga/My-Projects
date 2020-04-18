@@ -120,6 +120,12 @@ SDL_Rect gButtonSpriteClips[BUTTON_SPRITE_TOTAL];
 
 LButton gButtons[TOTAL_BUTTONS];
 
+LTexture gPressTexture;
+LTexture gUpTexture;
+LTexture gDownTexture;
+LTexture gLeftTexture;
+LTexture gRightTexture;
+
 // Animacao de caminhada, SS = Sprite Sheet
 const int WALKING_ANIMATION_FRAMES = 4;
 SDL_Rect gWalkingSpriteClips[ WALKING_ANIMATION_FRAMES ];
@@ -522,6 +528,32 @@ bool loadMedia()
 	gButtons[ 2 ].setPosition( 0, SCREEN_HEIGHT - BUTTON_HEIGHT );
 	gButtons[ 3 ].setPosition( SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT );
 
+	if(!gPressTexture.loadFromFile("press.png"))
+	{
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+	if(!gUpTexture.loadFromFile("up.bmp"))
+	{
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+	if(!gDownTexture.loadFromFile("down.bmp"))
+	{
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+	if(!gLeftTexture.loadFromFile("left.bmp"))
+	{
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+	if(!gRightTexture.loadFromFile("right.bmp"))
+	{
+        printf( "Failed to load walking animation texture!\n" );
+        success = false;
+    }
+
 	return success;
 }
 
@@ -534,6 +566,11 @@ void close()
 	gFade.free();
 	gWalkingSSTexture.free();
 	gButtonSpriteSheetTexture.free();
+	gPressTexture.free();
+	gUpTexture.free();
+	gDownTexture.free();
+	gLeftTexture.free();
+	gRightTexture.free();
 
 	TTF_CloseFont( gFont );
 	gFont = NULL;
@@ -565,6 +602,9 @@ int main( int argc, char* args[] )
 			bool quit = false;
 
 			SDL_Event e;
+
+			// Textura renderizada atualmente
+			LTexture* currentTexture = NULL;
 
 			// Angulo de rotacao
 			double degrees = 0;
@@ -688,11 +728,34 @@ int main( int argc, char* args[] )
 					// 	}
 					// }
 
-					for(int i = 0;i < TOTAL_BUTTONS;i++)
-					{
-						gButtons[i].handleEvent(&e);
-					}
+					// Aula 17 Mouse Events
+					// for(int i = 0;i < TOTAL_BUTTONS;i++)
+					// {
+					// 	gButtons[i].handleEvent(&e);
+					// }
 
+				}
+
+				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+				if(currentKeyStates[SDL_SCANCODE_UP])
+				{
+					currentTexture = &gUpTexture;
+				}
+				else if(currentKeyStates[SDL_SCANCODE_DOWN])
+				{
+					currentTexture = &gDownTexture;
+				}
+				else if(currentKeyStates[SDL_SCANCODE_LEFT])
+				{
+					currentTexture = &gLeftTexture;
+				}
+				else if(currentKeyStates[SDL_SCANCODE_RIGHT])
+				{
+					currentTexture = &gRightTexture;
+				}
+				else
+				{
+					currentTexture = &gPressTexture;
 				}
 
 				// Limpa tela
@@ -735,10 +798,13 @@ int main( int argc, char* args[] )
 				// Aula 16 TTF
 				// gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
 
-				for(int i = 0;i < TOTAL_BUTTONS;i++)
-				{
-					gButtons[i].render();
-				}
+				// Aula 17 Mouse Events
+				// for(int i = 0;i < TOTAL_BUTTONS;i++)
+				// {
+				// 	gButtons[i].render();
+				// }
+
+				currentTexture->render(0, 0);
 
 				// Atualiza tela
 				SDL_RenderPresent( gRenderer );
