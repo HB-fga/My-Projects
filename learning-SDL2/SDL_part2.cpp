@@ -138,6 +138,7 @@ LTexture gWalkingSSTexture;
 
 // handler do Gamepad 1
 SDL_Joystick* gGameController = NULL;
+SDL_Haptic* gControllerHaptic = NULL;
 
 LTexture::LTexture()
 {
@@ -341,7 +342,7 @@ bool init()
 {
 	bool success = true;
 
-	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_JOYSTICK ) < 0 )
+	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
 		success = false;
@@ -364,6 +365,21 @@ bool init()
 			if(gGameController == NULL)
 			{
                 printf( "Warning: Unable to open game controller! SDL Error: %s\n", SDL_GetError() );
+			}
+			else
+			{
+				gControllerHaptic = SDL_HapticOpenFromJoystick(gGameController);
+				if( gControllerHaptic == NULL)
+				{
+					printf( "Warning: Controller does not support haptics! SDL Error: %s\n", SDL_GetError() );
+				}
+				else
+				{
+					if(SDL_HapticRumbleInit(gControllerHaptic) < 0)
+					{
+						printf( "Warning: Unable to initialize rumble! SDL Error: %s\n", SDL_GetError() );
+					}
+				}
 			}
 		}
 
@@ -507,7 +523,7 @@ bool loadMedia()
 	{
 		// Renderiza texto
 		SDL_Color textColor = {0, 0, 0};
-		if(!gTextTexture.loadFromRenderedText("The quick brown fox jumps over the lazy dog!", textColor))
+		if(!gTextTexture.loadFromRenderedText("Press something to rumble!", textColor))
 		{
 			printf( "Failed to render text texture!\n" );
             success = false;
@@ -591,7 +607,9 @@ void close()
 	gLeftTexture.free();
 	gRightTexture.free();
 
+	SDL_HapticClose(gControllerHaptic);
 	SDL_JoystickClose(gGameController);
+	gControllerHaptic = NULL;
 	gGameController = NULL;
 
 	TTF_CloseFont( gFont );
@@ -693,6 +711,15 @@ int main( int argc, char* args[] )
 									yDir = 0;
 								}
 							}
+						}
+					}
+
+					if( e.type == SDL_JOYBUTTONDOWN )
+					{
+						// ativa rumble em 100% de forca por 500 milisegundos
+						if( SDL_HapticRumblePlay(gControllerHaptic, 1.00, 500) != 0)
+						{
+							printf( "Warning: Unable to play rumble! %s\n", SDL_GetError() );
 						}
 					}
 
@@ -862,7 +889,7 @@ int main( int argc, char* args[] )
 				// gArrowSprite.render((SCREEN_WIDTH - gArrowSprite.getWidth()) / 2, (SCREEN_HEIGHT - gArrowSprite.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
 				// Aula 16 TTF
-				// gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
+				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - 50));
 
 				// Aula 17 Mouse Events
 				// for(int i = 0;i < TOTAL_BUTTONS;i++)
