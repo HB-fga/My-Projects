@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <string>
@@ -107,6 +108,15 @@ SDL_Renderer* gRenderer = NULL;
 // Fonte global
 TTF_Font *gFont = NULL;
 
+// Musica que sera tocada
+Mix_Music *gMusic = NULL;
+
+// Efeitos sonoros que serao usados
+Mix_Chunk *gScratch = NULL;
+Mix_Chunk *gHigh = NULL;
+Mix_Chunk *gMedium = NULL;
+Mix_Chunk *gLow = NULL;
+
 // Sprites da cena
 SDL_Rect gSpriteClips[ 4 ];
 LTexture gSpriteSheetTexture;
@@ -119,6 +129,7 @@ LTexture gFade;
 LTexture gArrowSprite;
 
 LTexture gTextTexture;
+LTexture gTextTexture2;
 
 LTexture gButtonSpriteSheetTexture;
 SDL_Rect gButtonSpriteClips[BUTTON_SPRITE_TOTAL];
@@ -342,7 +353,7 @@ bool init()
 {
 	bool success = true;
 
-	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC ) < 0 )
+	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_AUDIO ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
 		success = false;
@@ -406,6 +417,12 @@ bool init()
 				{
 					printf( "SDL_image could not initialize! SDL_mage Error: %s\n", IMG_GetError() );
 					success = false;
+				}
+
+				if( Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 )
+				{
+					printf( "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError() );
+                    success = false;
 				}
 
                 if( TTF_Init() == -1 )
@@ -513,7 +530,7 @@ bool loadMedia()
     }
 
 	// Abre a fonte
-	gFont = TTF_OpenFont("font.ttf", 28);
+	gFont = TTF_OpenFont("font.ttf", 20);
 	if(gFont == NULL)
 	{
 		printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
@@ -525,7 +542,13 @@ bool loadMedia()
 		SDL_Color textColor = {0, 0, 0};
 		if(!gTextTexture.loadFromRenderedText("Press something to rumble!", textColor))
 		{
-			printf( "Failed to render text texture!\n" );
+			printf( "Failed to render text texture 1!\n" );
+            success = false;
+		}
+
+		if(!gTextTexture2.loadFromRenderedText("1, 2, 3, 4 for sounds, 9 to play/pause music, 0 to stop music", textColor))
+		{
+			printf( "Failed to render text texture 2!\n" );
             success = false;
 		}
 	}
@@ -589,6 +612,43 @@ bool loadMedia()
         success = false;
     }
 
+	// Carrega musica
+	gMusic = Mix_LoadMUS( "beat.wav" );
+	if(gMusic == NULL)
+	{
+		printf( "Failed to load beat music! SDL_mixer Error: %s\n", Mix_GetError() );
+        success = false;
+	}
+
+	// Carrega efeitos sonoros
+	gScratch = Mix_LoadWAV( "scratch.wav" );
+	if( gScratch == NULL )
+    {
+        printf( "Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
+        success = false;
+    }
+    
+    gHigh = Mix_LoadWAV( "high.wav" );
+    if( gHigh == NULL )
+    {
+        printf( "Failed to load high sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
+        success = false;
+    }
+
+    gMedium = Mix_LoadWAV( "medium.wav" );
+    if( gMedium == NULL )
+    {
+        printf( "Failed to load medium sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
+        success = false;
+    }
+
+    gLow = Mix_LoadWAV( "low.wav" );
+    if( gLow == NULL )
+    {
+        printf( "Failed to load low sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
+        success = false;
+    }
+
 	return success;
 }
 
@@ -607,6 +667,18 @@ void close()
 	gLeftTexture.free();
 	gRightTexture.free();
 
+	Mix_FreeChunk(gScratch);
+	Mix_FreeChunk(gHigh);
+	Mix_FreeChunk(gMedium);
+	Mix_FreeChunk(gLow);
+	gScratch = NULL;
+	gHigh = NULL;
+	gMedium = NULL;
+	gLow = NULL;
+
+	Mix_FreeMusic(gMusic);
+	gMusic = NULL;
+
 	SDL_HapticClose(gControllerHaptic);
 	SDL_JoystickClose(gGameController);
 	gControllerHaptic = NULL;
@@ -620,6 +692,7 @@ void close()
 	gWindow = NULL;
 	gRenderer = NULL;
 
+	Mix_Quit();
 	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
@@ -674,54 +747,108 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
-					else if(e.type == SDL_JOYAXISMOTION)
+					else if( e.type == SDL_KEYDOWN )
 					{
-						// Movimento no controle 0
-						if( e.jaxis.which == 0)
+						switch( e.key.keysym.sym )
 						{
-							// X axis
-							if(e.jaxis.axis == 0)
-							{
-								if(e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-								{
-									xDir = -1;
-								}
-								else if(e.jaxis.value > JOYSTICK_DEAD_ZONE)
-								{
-									xDir = 1;
-								}
-								else
-								{
-									xDir = 0;
-								}
-							}
-							// Y axis
-							else if( e.jaxis.axis == 1)
-							{
-								if( e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-								{
-									yDir = -1;
-								}
-								else if( e.jaxis.value > JOYSTICK_DEAD_ZONE)
-								{
-									yDir = 1;
-								}
-								else
-								{
-									yDir = 0;
-								}
-							}
-						}
-					}
+							// Efeitos sonoros
+							case SDLK_1:
+								Mix_PlayChannel( -1, gHigh, 0 );
+								break;
+                            
+                            case SDLK_2:
+								Mix_PlayChannel( -1, gMedium, 0 );
+								break;
+                            
+                            case SDLK_3:
+								Mix_PlayChannel( -1, gLow, 0 );
+								break;
 
-					if( e.type == SDL_JOYBUTTONDOWN )
-					{
-						// ativa rumble em 100% de forca por 500 milisegundos
-						if( SDL_HapticRumblePlay(gControllerHaptic, 1.00, 500) != 0)
-						{
-							printf( "Warning: Unable to play rumble! %s\n", SDL_GetError() );
+                            case SDLK_4:
+								Mix_PlayChannel( -1, gScratch, 0 );
+								break;
+
+							case SDLK_9:
+								// Se nao tiver musica tocando:
+								if( Mix_PlayingMusic() == 0 )
+								{
+									// Toca a musica
+									Mix_PlayMusic( gMusic, -1 );
+								}
+								// Se a musica estiver tocando:
+								else
+								{
+									// Se a musica estiver pausada:
+									if( Mix_PausedMusic() == 1 )
+									{
+										// Continua a musica
+										Mix_ResumeMusic();
+									}
+									// Se a musica estiver tocando:
+									else
+									{
+										// Pausa a musica
+										Mix_PauseMusic();
+									}
+								}
+								break;
+                            
+                            case SDLK_0:
+								// Para a musica
+								Mix_HaltMusic();
+								break;
 						}
 					}
+					
+					// Aula 19-20 Gamepads
+					// else if(e.type == SDL_JOYAXISMOTION)
+					// {
+					// 	// Movimento no controle 0
+					// 	if( e.jaxis.which == 0)
+					// 	{
+					// 		// X axis
+					// 		if(e.jaxis.axis == 0)
+					// 		{
+					// 			if(e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+					// 			{
+					// 				xDir = -1;
+					// 			}
+					// 			else if(e.jaxis.value > JOYSTICK_DEAD_ZONE)
+					// 			{
+					// 				xDir = 1;
+					// 			}
+					// 			else
+					// 			{
+					// 				xDir = 0;
+					// 			}
+					// 		}
+					// 		// Y axis
+					// 		else if( e.jaxis.axis == 1)
+					// 		{
+					// 			if( e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+					// 			{
+					// 				yDir = -1;
+					// 			}
+					// 			else if( e.jaxis.value > JOYSTICK_DEAD_ZONE)
+					// 			{
+					// 				yDir = 1;
+					// 			}
+					// 			else
+					// 			{
+					// 				yDir = 0;
+					// 			}
+					// 		}
+					// 	}
+					// }
+
+					// if( e.type == SDL_JOYBUTTONDOWN )
+					// {
+					// 	// ativa rumble em 100% de forca por 500 milisegundos
+					// 	if( SDL_HapticRumblePlay(gControllerHaptic, 1.00, 500) != 0)
+					// 	{
+					// 		printf( "Warning: Unable to play rumble! %s\n", SDL_GetError() );
+					// 	}
+					// }
 
                     // Aula 13 alpha blending
 					// else if( e.type == SDL_KEYDOWN )
@@ -889,7 +1016,8 @@ int main( int argc, char* args[] )
 				// gArrowSprite.render((SCREEN_WIDTH - gArrowSprite.getWidth()) / 2, (SCREEN_HEIGHT - gArrowSprite.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
 				// Aula 16 TTF
-				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - 50));
+				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - 70));
+				gTextTexture2.render((SCREEN_WIDTH - gTextTexture2.getWidth()) / 2, (SCREEN_HEIGHT - 35));
 
 				// Aula 17 Mouse Events
 				// for(int i = 0;i < TOTAL_BUTTONS;i++)
