@@ -299,8 +299,10 @@ int main( int argc, char* args[] )
 
 			SDL_Color textColor = { 0, 0, 0, 255 };
 
+			// Tempo a ser subtraido
 			Uint32 startTime = 0;
 
+			// Texto que sera apresentado na tela
 			std::stringstream timeText;
 
 			while( !quit )
@@ -314,13 +316,16 @@ int main( int argc, char* args[] )
 					}
 					else if( e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN )
 					{
+						// Definindo tempo a ser subtraido
 						startTime = SDL_GetTicks();
 					}
 				}
 
+				// Constroi string a ser apresentada
 				timeText.str( "" );
 				timeText << "Milliseconds since start time " << SDL_GetTicks() - startTime; 
 
+				// Transforma string em textura
 				if( !gTimeTextTexture.loadFromRenderedText( timeText.str().c_str(), textColor ) )
 				{
 					printf( "Unable to render time texture!\n" );
