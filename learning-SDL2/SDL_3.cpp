@@ -436,7 +436,10 @@ int main( int argc, char* args[] )
 
 			SDL_Color textColor = { 0, 0, 0, 255 };
 
-			MyTimer timer;
+			MyTimer fpsTimer;
+
+			int countedFrames = 0;
+			fpsTimer.start();
 
 			// Tempo a ser subtraido
 			// Uint32 startTime = 0;
@@ -446,44 +449,48 @@ int main( int argc, char* args[] )
 
 			while( !quit )
 			{
-
 				while( SDL_PollEvent( &e ) != 0 )
 				{
 					if( e.type == SDL_QUIT )
 					{
 						quit = true;
 					}
-					else if( e.type == SDL_KEYDOWN )
-					{
-						if(e.key.keysym.sym == SDLK_s)
-						{
-							if(timer.isStarted())
-							{
-								timer.stop();
-							}
-							else
-							{
-								timer.start();
-							}
-						}
-						else if(e.key.keysym.sym == SDLK_p)
-						{
-							if(timer.isPaused())
-							{
-								timer.unpause();
-							}
-							else
-							{
-								timer.pause();
-							}
+					// Aula 23 advanced timers
+					// else if( e.type == SDL_KEYDOWN )
+					// {
+					// 	if(e.key.keysym.sym == SDLK_s)
+					// 	{
+					// 		if(timer.isStarted())
+					// 		{
+					// 			timer.stop();
+					// 		}
+					// 		else
+					// 		{
+					// 			timer.start();
+					// 		}
+					// 	}
+					// 	else if(e.key.keysym.sym == SDLK_p)
+					// 	{
+					// 		if(timer.isPaused())
+					// 		{
+					// 			timer.unpause();
+					// 		}
+					// 		else
+					// 		{
+					// 			timer.pause();
+					// 		}
 							
-						}
-					}
+					// 	}
+					// }
 				}
+
+				float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
+				if(avgFPS > 2000000)
+					avgFPS = 0;
 
 				// Constroi string a ser apresentada
 				timeText.str( "" );
-				timeText << "Seconds since start time " << (timer.getTicks() / 1000.f);
+				timeText << "Average frames per second " << avgFPS;
 
 				// Transforma string em textura
 				if( !gTimeTextTexture.loadFromRenderedText( timeText.str().c_str(), textColor ) )
@@ -494,11 +501,10 @@ int main( int argc, char* args[] )
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 
-				gStartPromptTextTexture.render( ( SCREEN_WIDTH - gStartPromptTextTexture.getWidth() ) / 2, 0 );
-                gPausePromptTextTexture.render( ( SCREEN_WIDTH - gPausePromptTextTexture.getWidth() ) / 2, gStartPromptTextTexture.getHeight() );
                 gTimeTextTexture.render( 120, ( SCREEN_HEIGHT - gTimeTextTexture.getHeight() ) / 2 );
 
 				SDL_RenderPresent( gRenderer );
+				countedFrames++;
 			}
 		}
 	}
