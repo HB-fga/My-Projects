@@ -10,6 +10,8 @@
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
+const int SCREEN_FPS = 60;
+const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 class LTexture
 {
@@ -338,7 +340,8 @@ bool init()
 		}
 		else
 		{
-			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+			// gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
 			if( gRenderer == NULL )
 			{
 				printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -371,7 +374,7 @@ bool loadMedia()
 {
 	bool success = true;
 
-	gFont = TTF_OpenFont( "font.ttf", 28 );
+	gFont = TTF_OpenFont( "pixel-font.ttf", 28 );
 	if( gFont == NULL )
 	{
 		printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
@@ -437,6 +440,7 @@ int main( int argc, char* args[] )
 			SDL_Color textColor = { 0, 0, 0, 255 };
 
 			MyTimer fpsTimer;
+			MyTimer capTimer;
 
 			int countedFrames = 0;
 			fpsTimer.start();
@@ -490,7 +494,7 @@ int main( int argc, char* args[] )
 
 				// Constroi string a ser apresentada
 				timeText.str( "" );
-				timeText << "Average frames per second " << avgFPS;
+				timeText << "Average frames per second (with cap) " << avgFPS;
 
 				// Transforma string em textura
 				if( !gTimeTextTexture.loadFromRenderedText( timeText.str().c_str(), textColor ) )
@@ -505,6 +509,11 @@ int main( int argc, char* args[] )
 
 				SDL_RenderPresent( gRenderer );
 				countedFrames++;
+
+				// Se o frame terminou cedo
+				int frameTicks = capTimer.getTicks();
+				if(frameTicks < SCREEN_TICKS_PER_FRAME)
+					SDL_Delay( SCREEN_TICKS_PER_FRAME - frameTicks );
 			}
 		}
 	}
