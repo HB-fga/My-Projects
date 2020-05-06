@@ -76,6 +76,35 @@ class MyTimer
 
 };
 
+class Dot
+{
+	private:
+		// posicao X e Y do ponto
+		int mPosX, mPosY;
+
+		// velocidade do ponto
+		int mVelX, mVelY;
+
+	public:
+		Dot();
+
+		// dimensoes do ponto
+        static const int DOT_WIDTH = 20;
+        static const int DOT_HEIGHT = 20;
+
+        // velocidade maximo de eixo do ponto
+        static const int DOT_VEL = 10;
+        
+        // recebe input e ajusta velocidade
+        void handleEvent( SDL_Event& e );
+
+        // move o ponto
+        void move();
+
+        // renderiza o ponto na tela
+        void render();
+};
+
 bool init();
 
 bool loadMedia();
@@ -91,6 +120,8 @@ TTF_Font *gFont = NULL;
 LTexture gTimeTextTexture;
 LTexture gStartPromptTextTexture;
 LTexture gPausePromptTextTexture;
+
+LTexture gDotTexture;
 
 LTexture::LTexture()
 {
@@ -316,6 +347,63 @@ bool MyTimer::isPaused()
 	return mPaused && mStarted;
 }
 
+Dot::Dot()
+{
+	mPosX = 0;
+	mPosY = 0;
+	mVelX = 0;
+	mVelY = 0;
+}
+
+void Dot::handleEvent(SDL_Event& e)
+{
+	if( e.type == SDL_KEYDOWN && e.key.repeat == 0)
+	{
+		// "acelera"
+		switch(e.key.keysym.sym)
+		{
+			case SDLK_UP: mVelY -= DOT_VEL; break;
+            case SDLK_DOWN: mVelY += DOT_VEL; break;
+            case SDLK_LEFT: mVelX -= DOT_VEL; break;
+            case SDLK_RIGHT: mVelX += DOT_VEL; break;
+		}
+	}
+	else if( e.type == SDL_KEYUP && e.key.repeat == 0)
+	{
+		// "freia"
+		switch(e.key.keysym.sym)
+		{
+			case SDLK_UP: mVelY += DOT_VEL; break;
+            case SDLK_DOWN: mVelY -= DOT_VEL; break;
+            case SDLK_LEFT: mVelX += DOT_VEL; break;
+            case SDLK_RIGHT: mVelX -= DOT_VEL; break;
+		}
+	}
+}
+
+void Dot::move()
+{
+	mPosX += mVelX;
+
+	mPosY += mVelY;
+
+	// Previne "out of bounds"
+	if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) )
+    {
+        mPosX -= mVelX;
+    }
+
+	if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) )
+    {
+        mPosY -= mVelY;
+    }
+}
+
+void Dot::render()
+{
+	gDotTexture.render(mPosX, mPosY);
+}
+
 bool init()
 {
 	bool success = true;
@@ -340,8 +428,8 @@ bool init()
 		}
 		else
 		{
-			// gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
-			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
+			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+			// gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
 			if( gRenderer == NULL )
 			{
 				printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -397,6 +485,12 @@ bool loadMedia()
 		}
 	}
 
+	if( !gDotTexture.loadFromFile("dot.bmp") )
+	{
+		printf( "Unable to render dot texture!\n" );
+		success = false;
+	}
+
 	return success;
 }
 
@@ -436,6 +530,8 @@ int main( int argc, char* args[] )
 			bool quit = false;
 
 			SDL_Event e;
+
+			Dot dot;
 
 			SDL_Color textColor = { 0, 0, 0, 255 };
 
@@ -486,34 +582,42 @@ int main( int argc, char* args[] )
 							
 					// 	}
 					// }
+
+					dot.handleEvent(e);
 				}
 
-				float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
-				if(avgFPS > 2000000)
-					avgFPS = 0;
+				dot.move();
 
-				// Constroi string a ser apresentada
-				timeText.str( "" );
-				timeText << "Average frames per second (with cap) " << avgFPS;
+				// Aula 25 capping frame rate
+				// float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
+				// if(avgFPS > 2000000)
+				// 	avgFPS = 0;
 
-				// Transforma string em textura
-				if( !gTimeTextTexture.loadFromRenderedText( timeText.str().c_str(), textColor ) )
-				{
-					printf( "Unable to render time texture!\n" );
-				}
+				// // Constroi string a ser apresentada
+				// timeText.str( "" );
+				// timeText << "Average frames per second (with cap) " << avgFPS;
+
+				// // Transforma string em textura
+				// if( !gTimeTextTexture.loadFromRenderedText( timeText.str().c_str(), textColor ) )
+				// {
+				// 	printf( "Unable to render time texture!\n" );
+				// }
 
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 
-                gTimeTextTexture.render( 120, ( SCREEN_HEIGHT - gTimeTextTexture.getHeight() ) / 2 );
+				dot.render();
+
+				// Aula 25 capping frame rate
+                // gTimeTextTexture.render( 120, ( SCREEN_HEIGHT - gTimeTextTexture.getHeight() ) / 2 );				
 
 				SDL_RenderPresent( gRenderer );
-				countedFrames++;
+				// countedFrames++;
 
-				// Se o frame terminou cedo
-				int frameTicks = capTimer.getTicks();
-				if(frameTicks < SCREEN_TICKS_PER_FRAME)
-					SDL_Delay( SCREEN_TICKS_PER_FRAME - frameTicks );
+				// // Se o frame terminou cedo
+				// int frameTicks = capTimer.getTicks();
+				// if(frameTicks < SCREEN_TICKS_PER_FRAME)
+				// 	SDL_Delay( SCREEN_TICKS_PER_FRAME - frameTicks );
 			}
 		}
 	}
