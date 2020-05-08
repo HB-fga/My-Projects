@@ -85,6 +85,9 @@ class Dot
 		// velocidade do ponto
 		int mVelX, mVelY;
 
+		// caixa de colisao do ponto
+		SDL_Rect mCollider;
+
 	public:
 		Dot();
 
@@ -99,7 +102,7 @@ class Dot
         void handleEvent( SDL_Event& e );
 
         // move o ponto
-        void move();
+        void move(SDL_Rect& wall);
 
         // renderiza o ponto na tela
         void render();
@@ -110,6 +113,8 @@ bool init();
 bool loadMedia();
 
 void close();
+
+bool checkCollision(SDL_Rect a, SDL_Rect b);
 
 SDL_Window* gWindow = NULL;
 
@@ -353,6 +358,8 @@ Dot::Dot()
 	mPosY = 0;
 	mVelX = 0;
 	mVelY = 0;
+    mCollider.w = DOT_WIDTH;
+    mCollider.h = DOT_HEIGHT;
 }
 
 void Dot::handleEvent(SDL_Event& e)
@@ -381,27 +388,72 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move()
+void Dot::move(SDL_Rect &wall)
 {
 	mPosX += mVelX;
+	mCollider.x = mPosX;
 
 	mPosY += mVelY;
+	mCollider.y = mPosY;
 
 	// Previne "out of bounds"
-	if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) )
+	if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) || checkCollision( mCollider, wall ) )
     {
         mPosX -= mVelX;
+		mCollider.x = mPosX;
     }
 
-	if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) )
+	if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) || checkCollision( mCollider, wall ) )
     {
         mPosY -= mVelY;
+		mCollider.y = mPosY;
     }
 }
 
 void Dot::render()
 {
 	gDotTexture.render(mPosX, mPosY);
+}
+
+bool checkCollision(SDL_Rect a, SDL_Rect b)
+{
+    int leftA, leftB;
+    int rightA, rightB;
+    int topA, topB;
+    int bottomA, bottomB;
+
+    leftA = a.x;
+    rightA = a.x + a.w;
+    topA = a.y;
+    bottomA = a.y + a.h;
+
+    leftB = b.x;
+    rightB = b.x + b.w;
+    topB = b.y;
+    bottomB = b.y + b.h;
+
+	// checa se houve colisao
+    if( bottomA <= topB )
+    {
+        return false;
+    }
+
+    if( topA >= bottomB )
+    {
+        return false;
+    }
+
+    if( rightA <= leftB )
+    {
+        return false;
+    }
+
+    if( leftA >= rightB )
+    {
+        return false;
+    }
+
+    return true;
 }
 
 bool init()
@@ -533,6 +585,12 @@ int main( int argc, char* args[] )
 
 			Dot dot;
 
+			SDL_Rect wall;
+			wall.x = 300;
+			wall.y = 40;
+			wall.w = 40;
+			wall.h = 400;
+
 			SDL_Color textColor = { 0, 0, 0, 255 };
 
 			MyTimer fpsTimer;
@@ -586,7 +644,7 @@ int main( int argc, char* args[] )
 					dot.handleEvent(e);
 				}
 
-				dot.move();
+				dot.move(wall);
 
 				// Aula 25 capping frame rate
 				// float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
@@ -605,6 +663,9 @@ int main( int argc, char* args[] )
 
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
+
+				SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );        
+                SDL_RenderDrawRect( gRenderer, &wall );
 
 				dot.render();
 
