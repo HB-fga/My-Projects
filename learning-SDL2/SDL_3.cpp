@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <vector>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -85,27 +86,31 @@ class Dot
 		// velocidade do ponto
 		int mVelX, mVelY;
 
-		// caixa de colisao do ponto
-		SDL_Rect mCollider;
+		// caixas de colisao do ponto
+        std::vector<SDL_Rect> mColliders;
 
+        // move as caixas de colisao relativas ao pontog
+        void shiftColliders();	
 	public:
-		Dot();
+		Dot(int x, int y);
 
 		// dimensoes do ponto
         static const int DOT_WIDTH = 20;
         static const int DOT_HEIGHT = 20;
 
         // velocidade maximo de eixo do ponto
-        static const int DOT_VEL = 10;
+        static const int DOT_VEL = 1;
         
         // recebe input e ajusta velocidade
         void handleEvent( SDL_Event& e );
 
         // move o ponto
-        void move(SDL_Rect& wall);
+        void move(std::vector<SDL_Rect>& otherColliders);
 
         // renderiza o ponto na tela
         void render();
+
+		std::vector<SDL_Rect>& getColliders();
 };
 
 bool init();
@@ -114,7 +119,7 @@ bool loadMedia();
 
 void close();
 
-bool checkCollision(SDL_Rect a, SDL_Rect b);
+bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b);
 
 SDL_Window* gWindow = NULL;
 
@@ -352,14 +357,66 @@ bool MyTimer::isPaused()
 	return mPaused && mStarted;
 }
 
-Dot::Dot()
+void Dot::shiftColliders()
 {
-	mPosX = 0;
-	mPosY = 0;
+	int r = 0;
+
+	for(int set = 0;set < mColliders.size(); ++set)
+	{
+		// centraliza caixa de colisao
+		mColliders[set].x = mPosX + (DOT_WIDTH - mColliders[set].w) / 2;
+
+		// define posicao da caixa de colisao no eixo Y
+		mColliders[set].y = mPosY + r;
+		r += mColliders[set].h;
+	}
+}
+
+Dot::Dot(int x, int y)
+{
+	mPosX = x;
+	mPosY = y;
 	mVelX = 0;
 	mVelY = 0;
-    mCollider.w = DOT_WIDTH;
-    mCollider.h = DOT_HEIGHT;
+
+	mColliders.resize(11);
+
+    // inicializa dimensoes das caixas de colisao
+    mColliders[ 0 ].w = 6;
+    mColliders[ 0 ].h = 1;
+
+    mColliders[ 1 ].w = 10;
+    mColliders[ 1 ].h = 1;
+
+    mColliders[ 2 ].w = 14;
+    mColliders[ 2 ].h = 1;
+
+    mColliders[ 3 ].w = 16;
+    mColliders[ 3 ].h = 2;
+
+    mColliders[ 4 ].w = 18;
+    mColliders[ 4 ].h = 2;
+
+    mColliders[ 5 ].w = 20;
+    mColliders[ 5 ].h = 6;
+
+    mColliders[ 6 ].w = 18;
+    mColliders[ 6 ].h = 2;
+
+    mColliders[ 7 ].w = 16;
+    mColliders[ 7 ].h = 2;
+
+    mColliders[ 8 ].w = 14;
+    mColliders[ 8 ].h = 1;
+
+    mColliders[ 9 ].w = 10;
+    mColliders[ 9 ].h = 1;
+
+    mColliders[ 10 ].w = 6;
+    mColliders[ 10 ].h = 1;
+
+    //Initialize colliders relative to position
+    shiftColliders();
 }
 
 void Dot::handleEvent(SDL_Event& e)
@@ -388,25 +445,26 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(SDL_Rect &wall)
+void Dot::move(std::vector<SDL_Rect>& otherColliders)
 {
+	// move no eixo X
 	mPosX += mVelX;
-	mCollider.x = mPosX;
+	shiftColliders();
 
-	mPosY += mVelY;
-	mCollider.y = mPosY;
-
-	// Previne "out of bounds"
-	if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) || checkCollision( mCollider, wall ) )
+	if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) || checkCollision( mColliders, otherColliders ) )
     {
         mPosX -= mVelX;
-		mCollider.x = mPosX;
+		shiftColliders();
     }
 
-	if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) || checkCollision( mCollider, wall ) )
+	// move no eixo Y
+	mPosY += mVelY;
+	shiftColliders();
+
+	if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) || checkCollision( mColliders, otherColliders ) )
     {
         mPosY -= mVelY;
-		mCollider.y = mPosY;
+		shiftColliders();
     }
 }
 
@@ -415,45 +473,43 @@ void Dot::render()
 	gDotTexture.render(mPosX, mPosY);
 }
 
-bool checkCollision(SDL_Rect a, SDL_Rect b)
+std::vector<SDL_Rect>& Dot::getColliders()
+{
+    return mColliders;
+}
+
+bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b)
 {
     int leftA, leftB;
     int rightA, rightB;
     int topA, topB;
     int bottomA, bottomB;
 
-    leftA = a.x;
-    rightA = a.x + a.w;
-    topA = a.y;
-    bottomA = a.y + a.h;
+    for( int Abox = 0;Abox < a.size();Abox++)
+	{
+		// calcula lados do retangulo A
+		leftA = a[ Abox ].x;
+        rightA = a[ Abox ].x + a[ Abox ].w;
+        topA = a[ Abox ].y;
+        bottomA = a[ Abox ].y + a[ Abox ].h;
 
-    leftB = b.x;
-    rightB = b.x + b.w;
-    topB = b.y;
-    bottomB = b.y + b.h;
+		for( int Bbox = 0; Bbox < b.size(); Bbox++ )
+        {
+            // calcula lados do retangulo B
+            leftB = b[ Bbox ].x;
+            rightB = b[ Bbox ].x + b[ Bbox ].w;
+            topB = b[ Bbox ].y;
+            bottomB = b[ Bbox ].y + b[ Bbox ].h;
 
-	// checa se houve colisao
-    if( bottomA <= topB )
-    {
-        return false;
-    }
+            if( ( ( bottomA <= topB ) || ( topA >= bottomB ) || ( rightA <= leftB ) || ( leftA >= rightB ) ) == false )
+            {
+                return true;
+            }
+        }
 
-    if( topA >= bottomB )
-    {
-        return false;
-    }
+	}
 
-    if( rightA <= leftB )
-    {
-        return false;
-    }
-
-    if( leftA >= rightB )
-    {
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 bool init()
@@ -551,6 +607,7 @@ void close()
 	gTimeTextTexture.free();
 	gStartPromptTextTexture.free();
 	gPausePromptTextTexture.free();
+	gDotTexture.free();
 
 	TTF_CloseFont( gFont );
 	gFont = NULL;
@@ -583,7 +640,9 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
-			Dot dot;
+			Dot dot(0, 0);
+
+			Dot otherDot(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
 
 			SDL_Rect wall;
 			wall.x = 300;
@@ -644,7 +703,7 @@ int main( int argc, char* args[] )
 					dot.handleEvent(e);
 				}
 
-				dot.move(wall);
+				dot.move(otherDot.getColliders());
 
 				// Aula 25 capping frame rate
 				// float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
@@ -664,10 +723,8 @@ int main( int argc, char* args[] )
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 
-				SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );        
-                SDL_RenderDrawRect( gRenderer, &wall );
-
 				dot.render();
+				otherDot.render();
 
 				// Aula 25 capping frame rate
                 // gTimeTextTexture.render( 120, ( SCREEN_HEIGHT - gTimeTextTexture.getHeight() ) / 2 );				
