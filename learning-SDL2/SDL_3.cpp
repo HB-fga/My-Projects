@@ -14,6 +14,12 @@ const int SCREEN_HEIGHT = 480;
 const int SCREEN_FPS = 60;
 const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
+struct Circle
+{
+	int x, y;
+	int r;
+};
+
 class LTexture
 {
 	public:
@@ -80,19 +86,19 @@ class MyTimer
 class Dot
 {
 	private:
+
 		// posicao X e Y do ponto
 		int mPosX, mPosY;
 
 		// velocidade do ponto
 		int mVelX, mVelY;
 
-		// caixas de colisao do ponto
-        std::vector<SDL_Rect> mColliders;
+		// colisao do ponto
+		Circle mCollider;
 
         // move as caixas de colisao relativas ao pontog
         void shiftColliders();	
 	public:
-		Dot(int x, int y);
 
 		// dimensoes do ponto
         static const int DOT_WIDTH = 20;
@@ -100,17 +106,19 @@ class Dot
 
         // velocidade maximo de eixo do ponto
         static const int DOT_VEL = 1;
-        
+
+		Dot(int x, int y);
+
         // recebe input e ajusta velocidade
         void handleEvent( SDL_Event& e );
 
         // move o ponto
-        void move(std::vector<SDL_Rect>& otherColliders);
+        void move( SDL_Rect& square, Circle& circle );
 
         // renderiza o ponto na tela
         void render();
 
-		std::vector<SDL_Rect>& getColliders();
+		Circle& getCollider();
 };
 
 bool init();
@@ -119,7 +127,14 @@ bool loadMedia();
 
 void close();
 
-bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b);
+// checa colisao entre circulo e circulo
+bool checkCollision( Circle& a, Circle& b);
+
+// checa colisao entre circulo e retangulo
+bool checkCollision( Circle& a, SDL_Rect& b);
+
+// calcula distancia ao quadrado
+double distanceSquared( int x1, int y1, int x2, int y2);
 
 SDL_Window* gWindow = NULL;
 
@@ -339,7 +354,7 @@ Uint32 MyTimer::getTicks()
 		}
 		else
 		{
-			// Retirn o tempo atual menos o tempo inicial
+			// Retorna o tempo atual menos o tempo inicial
 			time = SDL_GetTicks() - mStartTicks;
 		}
 	}
@@ -361,62 +376,26 @@ void Dot::shiftColliders()
 {
 	int r = 0;
 
-	for(int set = 0;set < mColliders.size(); ++set)
-	{
-		// centraliza caixa de colisao
-		mColliders[set].x = mPosX + (DOT_WIDTH - mColliders[set].w) / 2;
+	// centraliza caixa de colisao
+	mCollider.x = mPosX + (DOT_WIDTH - mCollider.r*2) / 2;
 
-		// define posicao da caixa de colisao no eixo Y
-		mColliders[set].y = mPosY + r;
-		r += mColliders[set].h;
-	}
+	// define posicao da caixa de colisao no eixo Y
+	mCollider.y = mPosY + r;
+	r += mCollider.r*2;
 }
 
 Dot::Dot(int x, int y)
 {
 	mPosX = x;
 	mPosY = y;
+
+	mCollider.r = DOT_WIDTH / 2;
+
 	mVelX = 0;
 	mVelY = 0;
 
-	mColliders.resize(11);
-
-    // inicializa dimensoes das caixas de colisao
-    mColliders[ 0 ].w = 6;
-    mColliders[ 0 ].h = 1;
-
-    mColliders[ 1 ].w = 10;
-    mColliders[ 1 ].h = 1;
-
-    mColliders[ 2 ].w = 14;
-    mColliders[ 2 ].h = 1;
-
-    mColliders[ 3 ].w = 16;
-    mColliders[ 3 ].h = 2;
-
-    mColliders[ 4 ].w = 18;
-    mColliders[ 4 ].h = 2;
-
-    mColliders[ 5 ].w = 20;
-    mColliders[ 5 ].h = 6;
-
-    mColliders[ 6 ].w = 18;
-    mColliders[ 6 ].h = 2;
-
-    mColliders[ 7 ].w = 16;
-    mColliders[ 7 ].h = 2;
-
-    mColliders[ 8 ].w = 14;
-    mColliders[ 8 ].h = 1;
-
-    mColliders[ 9 ].w = 10;
-    mColliders[ 9 ].h = 1;
-
-    mColliders[ 10 ].w = 6;
-    mColliders[ 10 ].h = 1;
-
-    //Initialize colliders relative to position
-    shiftColliders();
+	// move collider relativo ao circulo
+	shiftColliders();
 }
 
 void Dot::handleEvent(SDL_Event& e)
@@ -445,13 +424,13 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(std::vector<SDL_Rect>& otherColliders)
+void Dot::move(SDL_Rect& square, Circle& circle)
 {
 	// move no eixo X
 	mPosX += mVelX;
 	shiftColliders();
 
-	if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) || checkCollision( mColliders, otherColliders ) )
+	if( ( mPosX - mCollider.r < 0 ) || ( mPosX + mCollider.r > SCREEN_WIDTH ) || checkCollision( mCollider, square ) || checkCollision( mCollider, circle) )
     {
         mPosX -= mVelX;
 		shiftColliders();
@@ -461,7 +440,7 @@ void Dot::move(std::vector<SDL_Rect>& otherColliders)
 	mPosY += mVelY;
 	shiftColliders();
 
-	if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) || checkCollision( mColliders, otherColliders ) )
+	if( ( mPosY - mCollider.r < 0 ) || ( mPosY + mCollider.r > SCREEN_HEIGHT ) || checkCollision( mCollider, square ) || checkCollision( mCollider, circle) )
     {
         mPosY -= mVelY;
 		shiftColliders();
@@ -470,46 +449,76 @@ void Dot::move(std::vector<SDL_Rect>& otherColliders)
 
 void Dot::render()
 {
-	gDotTexture.render(mPosX, mPosY);
+	gDotTexture.render(mPosX - mCollider.r, mPosY - mCollider.r);
 }
 
-std::vector<SDL_Rect>& Dot::getColliders()
+Circle& Dot::getCollider()
 {
-    return mColliders;
+	return mCollider;
 }
 
-bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b)
+bool checkCollision(Circle& a, Circle& b)
 {
-    int leftA, leftB;
-    int rightA, rightB;
-    int topA, topB;
-    int bottomA, bottomB;
 
-    for( int Abox = 0;Abox < a.size();Abox++)
+	// calcula raio total ao quadrado
+	int totalRadiusSquared = a.r + b.r;
+	totalRadiusSquared = totalRadiusSquared * totalRadiusSquared;
+
+	if(distanceSquared(a.x, a.y, b.x, b.y) < (totalRadiusSquared))
 	{
-		// calcula lados do retangulo A
-		leftA = a[ Abox ].x;
-        rightA = a[ Abox ].x + a[ Abox ].w;
-        topA = a[ Abox ].y;
-        bottomA = a[ Abox ].y + a[ Abox ].h;
-
-		for( int Bbox = 0; Bbox < b.size(); Bbox++ )
-        {
-            // calcula lados do retangulo B
-            leftB = b[ Bbox ].x;
-            rightB = b[ Bbox ].x + b[ Bbox ].w;
-            topB = b[ Bbox ].y;
-            bottomB = b[ Bbox ].y + b[ Bbox ].h;
-
-            if( ( ( bottomA <= topB ) || ( topA >= bottomB ) || ( rightA <= leftB ) || ( leftA >= rightB ) ) == false )
-            {
-                return true;
-            }
-        }
-
+		// the circles collided
+		return true;
 	}
 
     return false;
+}
+
+bool checkCollision(Circle& a, SDL_Rect& b)
+{
+
+	int cX, cY;
+
+	if( a.x < b.x)
+	{
+		cX = b.x;
+	}
+	else if( a.x > b.x + b.w)
+	{
+		cX = b.x + b.w;
+	}
+	else
+	{
+		cX = a.x;
+	}
+
+	if( a.y < b.y )
+    {
+        cY = b.y;
+    }
+    else if( a.y > b.y + b.h )
+    {
+        cY = b.y + b.h;
+    }
+    else
+    {
+        cY = a.y;
+    }
+
+	if(distanceSquared(a.x, a.y, cX, cY) < a.r * a.r)
+	{
+		return true;
+	}
+
+	return false;
+	
+}
+
+double distanceSquared( int x1, int y1, int x2, int y2)
+{
+	int deltaX = x2 - x1;
+	int deltaY = y2 - y1;
+
+	return deltaX*deltaX + deltaY*deltaY;
 }
 
 bool init()
@@ -640,16 +649,6 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
-			Dot dot(0, 0);
-
-			Dot otherDot(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
-
-			SDL_Rect wall;
-			wall.x = 300;
-			wall.y = 40;
-			wall.w = 40;
-			wall.h = 400;
-
 			SDL_Color textColor = { 0, 0, 0, 255 };
 
 			MyTimer fpsTimer;
@@ -663,6 +662,17 @@ int main( int argc, char* args[] )
 
 			// Texto que sera apresentado na tela
 			std::stringstream timeText;
+
+			// o ponto que se movera pela tela
+            Dot dot( Dot::DOT_WIDTH / 2, Dot::DOT_HEIGHT / 2 );
+            Dot otherDot( SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4 );
+
+            // define a parede
+            SDL_Rect wall;
+            wall.x = 300;
+            wall.y = 40;
+            wall.w = 40;
+            wall.h = 400;
 
 			while( !quit )
 			{
@@ -703,7 +713,8 @@ int main( int argc, char* args[] )
 					dot.handleEvent(e);
 				}
 
-				dot.move(otherDot.getColliders());
+				// move o ponto e checa colisao
+                dot.move( wall, otherDot.getCollider() );
 
 				// Aula 25 capping frame rate
 				// float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
@@ -722,6 +733,10 @@ int main( int argc, char* args[] )
 
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
+
+				// renderiza parede
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );        
+                SDL_RenderDrawRect( gRenderer, &wall );
 
 				dot.render();
 				otherDot.render();
