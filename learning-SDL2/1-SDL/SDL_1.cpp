@@ -1,6 +1,8 @@
 // Linha de compilacao
 // g++ file.cpp -w -lSDL2 -lSDL2_image -o prog
 
+// Aulas 1-10
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>

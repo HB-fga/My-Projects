@@ -1,6 +1,8 @@
 // Linha de compilacao
 // g++ file.cpp -w -lSDL2 -lSDL2_image -o prog
 
+// Aulas 11-21
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
