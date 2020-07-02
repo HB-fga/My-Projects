@@ -5,6 +5,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <string>
 
@@ -81,6 +82,11 @@ SDL_Renderer* gRenderer = NULL;
 
 LTexture gDotTexture;
 LTexture gBGTexture;
+
+LTexture gPromptTextTexture;
+LTexture gInputTextTexture;
+
+TTF_Font *gFont = NULL;
 
 LTexture::LTexture()
 {
@@ -313,6 +319,14 @@ bool init()
 					printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
 					success = false;
 				}
+
+				#if defined(_SDL_TTF_H) || defined(SDL_TTF_H)
+				if( TTF_Init() == -1 )
+				{
+					printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
+					success = false;
+				}
+				#endif
 			}
 		}
 	}
@@ -324,13 +338,35 @@ bool loadMedia()
 {
 	bool success = true;
 
+	gFont = TTF_OpenFont( "pixel-font.ttf", 28 );
+	if( gFont == NULL )
+	{
+		printf( "Failed to load pixel font! SDL_ttf Error: %s\n", TTF_GetError() );
+		success = false;
+	}
+	else
+	{
+		SDL_Color textColor = { 0, 0, 0, 0xFF };
+		if( !gPromptTextTexture.loadFromRenderedText( "Enter Text:", textColor ) )
+		{
+			printf( "Failed to render prompt text!\n" );
+			success = false;
+		}
+	}
+
 	if( !gDotTexture.loadFromFile( "dot.bmp" ) )
 	{
 		printf( "Failed to load dot texture!\n" );
 		success = false;
 	}
 
-	if( !gBGTexture.loadFromFile( "bg.png" ) )
+	// if( !gBGTexture.loadFromFile( "bg1.png" ) )
+	// {
+	// 	printf( "Failed to load background texture!\n" );
+	// 	success = false;
+	// }
+
+	if( !gBGTexture.loadFromFile( "bg2.png" ) )
 	{
 		printf( "Failed to load background texture!\n" );
 		success = false;
@@ -371,53 +407,92 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
-			Dot dot;
+			// Dot dot;
 
 			// Deslocamento do background animado
 			int scrollingOffset = 0;
 
-			// Area da camera 
-			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+			// // Area da camera 
+			// SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+
+			// Define cor do texto
+			SDL_Color textColor = { 0, 0, 0, 0xFF};
+
+			// Texto atual
+			std::string inputText = "Some Text";
+			gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
+
+			// Habilita entrada de texto
+			SDL_StartTextInput();
 
 			while( !quit )
 			{
+
+				bool renderText = false;
+
 				while( SDL_PollEvent( &e ) != 0 )
 				{
 					if( e.type == SDL_QUIT )
 					{
 						quit = true;
 					}
+					// Definindo algumas acoes especiais (Backspace , ctrl c , ctrl v)
+					else if( e.type == SDL_KEYDOWN)
+					{
+						if( e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0 )
+						{
+							inputText.pop_back();
+							renderText = true;
+						}
+						else if( e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL )
+						{
+							SDL_SetClipboardText( inputText.c_str() );
+						}
+						else if( e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL )
+						{
+							inputText += SDL_GetClipboardText();
+							renderText = true;
+						}
+					}
+					else if( e.type == SDL_TEXTINPUT )
+                    {
+                        if( !( SDL_GetModState() & KMOD_CTRL && ( e.text.text[ 0 ] == 'c' || e.text.text[ 0 ] == 'C' || e.text.text[ 0 ] == 'v' || e.text.text[ 0 ] == 'V' ) ) )
+                        {
+                            inputText += e.text.text;
+                            renderText = true;
+                        }
+                    }
 
-					dot.handleEvent( e );
+					// dot.handleEvent( e );
 				}
 
-				dot.move();
+				// dot.move();
 
 				// Rola background
 				--scrollingOffset;
 				if(scrollingOffset < -gBGTexture.getWidth()) scrollingOffset = 0;
 
-				// Define a posicao da camera
+				// // Define a posicao da camera
 				// camera.x = ( dot.getPosX() + Dot::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
-				camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
+				// camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
 
 				// Mantem a camera dentro dos limites do cenario
 				// if( camera.x < 0 )
 				// { 
 				// 	camera.x = 0;
 				// }
-				if( camera.y < 0 )
-				{
-					camera.y = 0;
-				}
+				// if( camera.y < 0 )
+				// {
+				// 	camera.y = 0;
+				// }
 				// if( camera.x > LEVEL_WIDTH - camera.w )
 				// {
 				// 	camera.x = LEVEL_WIDTH - camera.w;
 				// }
-				if( camera.y > LEVEL_HEIGHT - camera.h )
-				{
-					camera.y = LEVEL_HEIGHT - camera.h;
-				}
+				// if( camera.y > LEVEL_HEIGHT - camera.h )
+				// {
+				// 	camera.y = LEVEL_HEIGHT - camera.h;
+				// }
 
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
@@ -426,10 +501,30 @@ int main( int argc, char* args[] )
 				gBGTexture.render( scrollingOffset, 0 );
 				gBGTexture.render( scrollingOffset + gBGTexture.getWidth(), 0 );
 
-				dot.render( camera.x, camera.y );
+				if( renderText )
+				{
+					if(inputText != "")
+					{
+						gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
+					}
+					else
+					{
+						gInputTextTexture.loadFromRenderedText( " ", textColor );
+					}
+					
+				}
+
+				gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+                gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
+
+				// dot.render( camera.x, camera.y );
 
 				SDL_RenderPresent( gRenderer );
 			}
+
+			// Desabilita entrada de texto
+			SDL_StopTextInput();
+
 		}
 	}
 
