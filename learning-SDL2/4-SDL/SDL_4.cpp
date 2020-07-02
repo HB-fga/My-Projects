@@ -8,17 +8,23 @@
 #include <stdio.h>
 #include <string>
 
+// Tamanho do cenario
 const int LEVEL_WIDTH = 1280;
 const int LEVEL_HEIGHT = 960;
 
+// Tamanho da camera/tela
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 class LTexture
 {
+	private:
+		SDL_Texture* mTexture;
+		int mWidth;
+		int mHeight;
+
 	public:
 		LTexture();
-
 		~LTexture();
 
 		bool loadFromFile( std::string path );
@@ -28,48 +34,39 @@ class LTexture
 		#endif
 
 		void free();
-
 		void setColor( Uint8 red, Uint8 green, Uint8 blue );
-
 		void setBlendMode( SDL_BlendMode blending );
-
 		void setAlpha( Uint8 alpha );
-		
 		void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
 
 		int getWidth();
 		int getHeight();
 
-	private:
-		SDL_Texture* mTexture;
-
-		int mWidth;
-		int mHeight;
+	
 };
 
 class Dot
 {
+	private:
+		int mPosX, mPosY;
+		int mVelX, mVelY;
+
     public:
+		Dot();
+
 		static const int DOT_WIDTH = 20;
 		static const int DOT_HEIGHT = 20;
 
 		static const int DOT_VEL = 10;
 
-		Dot();
-
 		void handleEvent( SDL_Event& e );
-
 		void move();
 
+		// Recebe a posicao da camera para renderizar apenas o espaco relativo a posicao do ponto
 		void render( int camX, int camY );
 
 		int getPosX();
 		int getPosY();
-
-    private:
-		int mPosX, mPosY;
-
-		int mVelX, mVelY;
 };
 
 bool init();
@@ -262,6 +259,7 @@ void Dot::move()
 
 void Dot::render( int camX, int camY )
 {
+	// Renderiza apenas a parte observada pela camera
 	gDotTexture.render( mPosX - camX, mPosY - camY );
 }
 
@@ -375,6 +373,7 @@ int main( int argc, char* args[] )
 
 			Dot dot;
 
+			// Area da camera 
 			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 			while( !quit )
@@ -391,9 +390,11 @@ int main( int argc, char* args[] )
 
 				dot.move();
 
+				// Define a posicao da camera
 				camera.x = ( dot.getPosX() + Dot::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
 				camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
 
+				// Mantem a camera dentro dos limites do cenario
 				if( camera.x < 0 )
 				{ 
 					camera.x = 0;
