@@ -9,15 +9,14 @@
 #include <stdio.h>
 #include <string>
 
-// Tamanho do cenario
-const int LEVEL_WIDTH = 640;
+const int LEVEL_WIDTH = 1280;
 const int LEVEL_HEIGHT = 960;
 
 // Tamanho da camera/tela
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+const int SCREEN_WIDTH = 960;
+const int SCREEN_HEIGHT = 540;
 
-class LTexture
+class Texture
 {
 	private:
 		SDL_Texture* mTexture;
@@ -25,8 +24,8 @@ class LTexture
 		int mHeight;
 
 	public:
-		LTexture();
-		~LTexture();
+		Texture();
+		~Texture();
 
 		bool loadFromFile( std::string path );
 		
@@ -80,27 +79,27 @@ SDL_Window* gWindow = NULL;
 
 SDL_Renderer* gRenderer = NULL;
 
-LTexture gDotTexture;
-LTexture gBGTexture;
+Texture gDotTexture;
+Texture gBGTexture;
 
-LTexture gPromptTextTexture;
-LTexture gInputTextTexture;
+Texture gPromptTextTexture;
+Texture gInputTextTexture;
 
 TTF_Font *gFont = NULL;
 
-LTexture::LTexture()
+Texture::Texture()
 {
 	mTexture = NULL;
 	mWidth = 0;
 	mHeight = 0;
 }
 
-LTexture::~LTexture()
+Texture::~Texture()
 {
 	free();
 }
 
-bool LTexture::loadFromFile( std::string path )
+bool Texture::loadFromFile( std::string path )
 {
 	free();
 
@@ -134,7 +133,7 @@ bool LTexture::loadFromFile( std::string path )
 }
 
 #if defined(_SDL_TTF_H) || defined(SDL_TTF_H)
-bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+bool Texture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
 {
 	free();
 
@@ -164,7 +163,7 @@ bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColo
 }
 #endif
 
-void LTexture::free()
+void Texture::free()
 {
 	if( mTexture != NULL )
 	{
@@ -175,22 +174,22 @@ void LTexture::free()
 	}
 }
 
-void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue )
+void Texture::setColor( Uint8 red, Uint8 green, Uint8 blue )
 {
 	SDL_SetTextureColorMod( mTexture, red, green, blue );
 }
 
-void LTexture::setBlendMode( SDL_BlendMode blending )
+void Texture::setBlendMode( SDL_BlendMode blending )
 {
 	SDL_SetTextureBlendMode( mTexture, blending );
 }
 		
-void LTexture::setAlpha( Uint8 alpha )
+void Texture::setAlpha( Uint8 alpha )
 {
 	SDL_SetTextureAlphaMod( mTexture, alpha );
 }
 
-void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip )
+void Texture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip )
 {
 	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
 
@@ -203,12 +202,12 @@ void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* ce
 	SDL_RenderCopyEx( gRenderer, mTexture, clip, &renderQuad, angle, center, flip );
 }
 
-int LTexture::getWidth()
+int Texture::getWidth()
 {
 	return mWidth;
 }
 
-int LTexture::getHeight()
+int Texture::getHeight()
 {
 	return mHeight;
 }
@@ -347,7 +346,7 @@ bool loadMedia()
 	else
 	{
 		SDL_Color textColor = { 0, 0, 0, 0xFF };
-		if( !gPromptTextTexture.loadFromRenderedText( "Enter Text:", textColor ) )
+		if( !gPromptTextTexture.loadFromRenderedText( "Te amo, Nicole", textColor ) )
 		{
 			printf( "Failed to render prompt text!\n" );
 			success = false;
@@ -360,13 +359,7 @@ bool loadMedia()
 		success = false;
 	}
 
-	// if( !gBGTexture.loadFromFile( "bg1.png" ) )
-	// {
-	// 	printf( "Failed to load background texture!\n" );
-	// 	success = false;
-	// }
-
-	if( !gBGTexture.loadFromFile( "bg2.png" ) )
+	if( !gBGTexture.loadFromFile( "bg1.png" ) )
 	{
 		printf( "Failed to load background texture!\n" );
 		success = false;
@@ -407,23 +400,10 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
-			// Dot dot;
+			Dot dot;
 
-			// Deslocamento do background animado
-			int scrollingOffset = 0;
-
-			// // Area da camera 
-			// SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-
-			// Define cor do texto
-			SDL_Color textColor = { 0, 0, 0, 0xFF};
-
-			// Texto atual
-			std::string inputText = "Some Text";
-			gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
-
-			// Habilita entrada de texto
-			SDL_StartTextInput();
+			// Area da camera 
+			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 			while( !quit )
 			{
@@ -436,95 +416,45 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
-					// Definindo algumas acoes especiais (Backspace , ctrl c , ctrl v)
-					else if( e.type == SDL_KEYDOWN)
-					{
-						if( e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0 )
-						{
-							inputText.pop_back();
-							renderText = true;
-						}
-						else if( e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL )
-						{
-							SDL_SetClipboardText( inputText.c_str() );
-						}
-						else if( e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL )
-						{
-							inputText += SDL_GetClipboardText();
-							renderText = true;
-						}
-					}
-					else if( e.type == SDL_TEXTINPUT )
-                    {
-                        if( !( SDL_GetModState() & KMOD_CTRL && ( e.text.text[ 0 ] == 'c' || e.text.text[ 0 ] == 'C' || e.text.text[ 0 ] == 'v' || e.text.text[ 0 ] == 'V' ) ) )
-                        {
-                            inputText += e.text.text;
-                            renderText = true;
-                        }
-                    }
 
-					// dot.handleEvent( e );
+					dot.handleEvent( e );
 				}
 
-				// dot.move();
+				dot.move();
 
-				// Rola background
-				--scrollingOffset;
-				if(scrollingOffset < -gBGTexture.getWidth()) scrollingOffset = 0;
-
-				// // Define a posicao da camera
-				// camera.x = ( dot.getPosX() + Dot::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
-				// camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
+				// Define a posicao da camera
+				camera.x = ( dot.getPosX() + Dot::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
+				camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
 
 				// Mantem a camera dentro dos limites do cenario
-				// if( camera.x < 0 )
-				// { 
-				// 	camera.x = 0;
-				// }
-				// if( camera.y < 0 )
-				// {
-				// 	camera.y = 0;
-				// }
-				// if( camera.x > LEVEL_WIDTH - camera.w )
-				// {
-				// 	camera.x = LEVEL_WIDTH - camera.w;
-				// }
-				// if( camera.y > LEVEL_HEIGHT - camera.h )
-				// {
-				// 	camera.y = LEVEL_HEIGHT - camera.h;
-				// }
+				if( camera.x < 0 )
+				{ 
+					camera.x = 0;
+				}
+				if( camera.y < 0 )
+				{
+					camera.y = 0;
+				}
+				if( camera.x > LEVEL_WIDTH - camera.w )
+				{
+					camera.x = LEVEL_WIDTH - camera.w;
+				}
+				if( camera.y > LEVEL_HEIGHT - camera.h )
+				{
+					camera.y = LEVEL_HEIGHT - camera.h;
+				}
 
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 
-				// gBGTexture.render( 0, 0, &camera );
-				gBGTexture.render( scrollingOffset, 0 );
-				gBGTexture.render( scrollingOffset + gBGTexture.getWidth(), 0 );
-
-				if( renderText )
-				{
-					if(inputText != "")
-					{
-						gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
-					}
-					else
-					{
-						gInputTextTexture.loadFromRenderedText( " ", textColor );
-					}
-					
-				}
+				gBGTexture.render( 0, 0, &camera );
 
 				gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-                gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
 
-				// dot.render( camera.x, camera.y );
+				dot.render( camera.x, camera.y );
 
 				SDL_RenderPresent( gRenderer );
 			}
-
-			// Desabilita entrada de texto
-			SDL_StopTextInput();
-
 		}
 	}
 

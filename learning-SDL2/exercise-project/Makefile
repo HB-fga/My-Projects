@@ -1,34 +1,19 @@
-BINFOLDER := bin/
+#OBJS specifies which files to compile as part of the project
+OBJS = game.cpp
 
-INCFOLDER := inc/
+#CC specifies which compiler we're using
+CC = g++
 
-SRCFOLDER := src/
+#COMPILER_FLAGS specifies the additional compilation options we're using
+# -w suppresses all warnings
+COMPILER_FLAGS = 
 
-OBJFOLDER := obj/
+#LINKER_FLAGS specifies the libraries we're linking against
+LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf
 
-CC := g++
+#OBJ_NAME specifies the name of our exectuable
+OBJ_NAME = prog
 
-FLAGS :=
-
-LINKER_FLAGS := -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf
-
-SRCFILES := $(wildcard src/*.cpp)
-all: $(SRCFILES:src/%.cpp=obj/%.o)
-	$(CC) $(FLAGS) obj/*.o -o bin/prog $(LINKER_FLAGS)
-obj/%.o: src/%.cpp
-	$(CC) $(FLAGS) -c $< -o $@ -I./inc $(LINKER_FLAGS)
-run: bin/prog
-	bin/prog
-.PHONY: clean
-clean:
-	rm -rf obj/*
-	rm -rf bin/*
-
-# OBJS = game.cpp
-
-# FLAGS =
-
-# LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf
-
-# all : $(OBJS)
-# 	g++ $(OBJS) $(FLAGS) $(LINKER_FLAGS) -o prog
+#This is the target that compiles our executable
+all : $(OBJS)
+	$(CC) $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
