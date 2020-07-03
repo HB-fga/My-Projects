@@ -1,25 +1,17 @@
-// Linha de compilacao
-// g++ file.cpp -w -lSDL2 -lSDL2_image -o prog
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_ttf.h>
 
 #include <iostream>
-#include <string>
 
-const int SCREEN_W = 960;
-const int SCREEN_H = 540;
-
-bool init();
-bool load_media();
-void close();
+#include "constants.hpp"
+#include "sdl.hpp"
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 
-TTF_Font *gFont = NULL;
+// TTF_Font *gFont = NULL;
 
 bool init()
 {
@@ -82,12 +74,12 @@ bool load_media()
 {
     bool success = true;
 
-    gFont = TTF_OpenFont( "pixel_font.ttf", 28 );
-    if( gFont == NULL )
-    {
-        std::cout << "failed to load pixel-font\n";
-        success = false;
-    }
+    // gFont = TTF_OpenFont( "pixel_font.ttf", 28 );
+    // if( gFont == NULL )
+    // {
+    //     std::cout << "failed to load pixel-font\n";
+    //     success = false;
+    // }
 
     return success;
 }
@@ -103,46 +95,29 @@ void close()
     SDL_Quit();
 }
 
-int main( int argc, char* args[] )
+bool main_code()
 {
+    bool success = true;
 
-    if( !init() )
+    bool quit = false;
+
+    SDL_Event e;
+
+    while( !quit )
     {
-        std::cout << "failed\n";
-    }
-    else
-    {
-        if( !load_media )
+        while( SDL_PollEvent( &e ) != 0)
         {
-            std::cout << "failed\n";
-        }
-        else
-        {
-            
-            bool quit = false;
-
-            SDL_Event e;
-
-            while( !quit )
+            if( e.type == SDL_QUIT )
             {
-                while( SDL_PollEvent( &e ) != 0)
-                {
-                    if( e.type == SDL_QUIT )
-                    {
-                        quit = true;
-                    }
-                }
+                quit = true;
             }
-
-            SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-            SDL_RenderClear( gRenderer );
-
-            SDL_RenderPresent( gRenderer );
         }
-        
     }
 
-    close();
+    SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+    SDL_RenderClear( gRenderer );
 
-    return 0;
+    SDL_RenderPresent( gRenderer );
+
+    return success;
 }
