@@ -10,7 +10,7 @@
 #include <string>
 
 // Tamanho do cenario
-const int LEVEL_WIDTH = 640;
+const int LEVEL_WIDTH = 1280;
 const int LEVEL_HEIGHT = 960;
 
 // Tamanho da camera/tela
@@ -407,13 +407,13 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
-			// Dot dot;
+			Dot dot;
 
 			// Deslocamento do background animado
 			int scrollingOffset = 0;
 
 			// // Area da camera 
-			// SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 			// Define cor do texto
 			SDL_Color textColor = { 0, 0, 0, 0xFF};
@@ -463,36 +463,36 @@ int main( int argc, char* args[] )
                         }
                     }
 
-					// dot.handleEvent( e );
+					dot.handleEvent( e );
 				}
 
-				// dot.move();
+				dot.move();
 
 				// Rola background
 				--scrollingOffset;
 				if(scrollingOffset < -gBGTexture.getWidth()) scrollingOffset = 0;
 
 				// // Define a posicao da camera
-				// camera.x = ( dot.getPosX() + Dot::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
-				// camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
+				camera.x = ( dot.getPosX() + Dot::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
+				camera.y = ( dot.getPosY() + Dot::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
 
 				// Mantem a camera dentro dos limites do cenario
-				// if( camera.x < 0 )
-				// { 
-				// 	camera.x = 0;
-				// }
-				// if( camera.y < 0 )
-				// {
-				// 	camera.y = 0;
-				// }
-				// if( camera.x > LEVEL_WIDTH - camera.w )
-				// {
-				// 	camera.x = LEVEL_WIDTH - camera.w;
-				// }
-				// if( camera.y > LEVEL_HEIGHT - camera.h )
-				// {
-				// 	camera.y = LEVEL_HEIGHT - camera.h;
-				// }
+				if( camera.x < 0 )
+				{ 
+					camera.x = 0;
+				}
+				if( camera.y < 0 )
+				{
+					camera.y = 0;
+				}
+				if( camera.x > LEVEL_WIDTH - camera.w )
+				{
+					camera.x = LEVEL_WIDTH - camera.w;
+				}
+				if( camera.y > LEVEL_HEIGHT - camera.h )
+				{
+					camera.y = LEVEL_HEIGHT - camera.h;
+				}
 
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
@@ -517,7 +517,7 @@ int main( int argc, char* args[] )
 				gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
                 gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
 
-				// dot.render( camera.x, camera.y );
+				dot.render( camera.x, camera.y );
 
 				SDL_RenderPresent( gRenderer );
 			}
