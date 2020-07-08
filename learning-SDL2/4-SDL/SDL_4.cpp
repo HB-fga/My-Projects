@@ -17,6 +17,8 @@ const int LEVEL_HEIGHT = 960;
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+const int TOTAL_DATA = 10;
+
 class LTexture
 {
 	private:
@@ -80,13 +82,17 @@ SDL_Window* gWindow = NULL;
 
 SDL_Renderer* gRenderer = NULL;
 
+TTF_Font *gFont = NULL;
+
 LTexture gDotTexture;
 LTexture gBGTexture;
 
 LTexture gPromptTextTexture;
 LTexture gInputTextTexture;
 
-TTF_Font *gFont = NULL;
+LTexture gDataTextures[ TOTAL_DATA ];
+
+Sint32 gData[ TOTAL_DATA ];
 
 LTexture::LTexture()
 {
@@ -338,6 +344,48 @@ bool loadMedia()
 {
 	bool success = true;
 
+	SDL_Color textColor = { 0, 0, 0, 0xFF };
+	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+
+	SDL_RWops* file = SDL_RWFromFile( "nums.bin", "r+b" );
+
+	if( file == NULL )
+	{
+		printf( "Warning: Unable to open file!\n" );
+
+		file = SDL_RWFromFile( "nums.bin", "w+b" );
+		if( file != NULL )
+		{
+			printf( "New file created!\n" );
+
+			for(int i = 0; i < TOTAL_DATA; i++)
+			{
+				gData[i] = 0;
+				SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1 );
+			}
+
+			SDL_RWclose( file );
+
+		}
+		else
+		{
+			printf( "Error: Unable to create file!\n" );
+			success = false;
+		}
+		
+	}
+	else
+	{
+		printf( "Reading file...!\n" );
+		for(int i = 0;i < TOTAL_DATA;i++)
+		{
+			SDL_RWread( file, &gData[i], sizeof(Sint32), 1 );
+		}
+
+		SDL_RWclose( file );
+	}
+	
+
 	gFont = TTF_OpenFont( "pixel-font.ttf", 28 );
 	if( gFont == NULL )
 	{
@@ -353,6 +401,12 @@ bool loadMedia()
 			success = false;
 		}
 	}
+
+	gDataTextures[ 0 ].loadFromRenderedText( std::to_string( gData[ 0 ] ), highlightColor );
+    for( int i = 1; i < TOTAL_DATA; ++i )
+    {
+        gDataTextures[ i ].loadFromRenderedText( std::to_string( gData[ i ] ), textColor );
+    }
 
 	if( !gDotTexture.loadFromFile( "dot.bmp" ) )
 	{
@@ -377,6 +431,22 @@ bool loadMedia()
 
 void close()
 {
+	// "saving progress"
+	SDL_RWops* file = SDL_RWFromFile( "nums.bin", "w+b" );
+	if( file != NULL )
+	{
+		for(int i = 0;i < TOTAL_DATA;i++)
+		{
+			SDL_RWwrite( file, &gData[i], sizeof(Sint32), 1 );
+		}
+
+		SDL_RWclose( file );
+	}
+	else
+	{
+		printf( "Error: Unable to save file\n" );
+	}
+
 	gDotTexture.free();
 	gBGTexture.free();
 
@@ -409,18 +479,22 @@ int main( int argc, char* args[] )
 
 			Dot dot;
 
+			// Cor do texto
+            SDL_Color textColor = { 0, 0, 0, 0xFF };
+            SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+
 			// Deslocamento do background animado
 			int scrollingOffset = 0;
 
 			// // Area da camera 
 			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
-			// Define cor do texto
-			SDL_Color textColor = { 0, 0, 0, 0xFF};
-
 			// Texto atual
 			std::string inputText = "Some Text";
 			gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
+
+            // Input atual
+            int currentData = 0;
 
 			// Habilita entrada de texto
 			SDL_StartTextInput();
@@ -436,32 +510,77 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
-					// Definindo algumas acoes especiais (Backspace , ctrl c , ctrl v)
-					else if( e.type == SDL_KEYDOWN)
+					else if( e.type == SDL_KEYDOWN )
 					{
-						if( e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0 )
+						switch( e.key.keysym.sym )
 						{
-							inputText.pop_back();
-							renderText = true;
-						}
-						else if( e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL )
-						{
-							SDL_SetClipboardText( inputText.c_str() );
-						}
-						else if( e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL )
-						{
-							inputText += SDL_GetClipboardText();
-							renderText = true;
+							case SDLK_UP:
+								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), textColor );
+								
+								--currentData;
+								if( currentData < 0 )
+								{
+									currentData = TOTAL_DATA -1;
+								}
+
+								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+								break;
+
+							case SDLK_DOWN:
+								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), textColor );
+								
+								++currentData;
+								if( currentData == TOTAL_DATA )
+								{
+									currentData = TOTAL_DATA -1;
+								}
+
+								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+								break;
+
+							case SDLK_LEFT:
+								--gData[ currentData ];
+								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+                            break;
+                            
+                            case SDLK_RIGHT:
+								++gData[ currentData ];
+								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+                            break;
 						}
 					}
-					else if( e.type == SDL_TEXTINPUT )
-                    {
-                        if( !( SDL_GetModState() & KMOD_CTRL && ( e.text.text[ 0 ] == 'c' || e.text.text[ 0 ] == 'C' || e.text.text[ 0 ] == 'v' || e.text.text[ 0 ] == 'V' ) ) )
-                        {
-                            inputText += e.text.text;
-                            renderText = true;
-                        }
-                    }
+
+					// // Aula 32 Input de texto e area de transferencia
+					// // Definindo algumas acoes especiais (Backspace , ctrl c , ctrl v)
+					// else if( e.type == SDL_KEYDOWN)
+					// {
+					// 	if( e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0 )
+					// 	{
+					// 		inputText.pop_back();
+					// 		renderText = true;
+					// 	}
+					// 	else if( e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL )
+					// 	{
+					// 		SDL_SetClipboardText( inputText.c_str() );
+					// 	}
+					// 	else if( e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL )
+					// 	{
+					// 		inputText += SDL_GetClipboardText();
+					// 		renderText = true;
+					// 	}
+					// }
+					// else if( e.type == SDL_TEXTINPUT )
+                    // {
+                    //     if( !( SDL_GetModState() & KMOD_CTRL && ( e.text.text[ 0 ] == 'c' || e.text.text[ 0 ] == 'C' || e.text.text[ 0 ] == 'v' || e.text.text[ 0 ] == 'V' ) ) )
+                    //     {
+                    //         inputText += e.text.text;
+                    //         renderText = true;
+                    //     }
+                    // }
 
 					dot.handleEvent( e );
 				}
@@ -516,6 +635,11 @@ int main( int argc, char* args[] )
 
 				gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
                 gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
+
+				for(int i = 0;i < TOTAL_DATA;i++)
+				{
+					gDataTextures[i].render( ( SCREEN_WIDTH - gDataTextures[i].getWidth() ) / 2, gPromptTextTexture.getHeight() * 2 + gDataTextures[ 0 ].getHeight() * i );
+				}
 
 				dot.render( camera.x, camera.y );
 
