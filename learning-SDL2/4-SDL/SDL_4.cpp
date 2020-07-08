@@ -8,6 +8,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <string>
+#include <sstream>
 
 // Tamanho do cenario
 const int LEVEL_WIDTH = 1280;
@@ -18,6 +19,37 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 const int TOTAL_DATA = 10;
+
+class LWindow
+{
+    private:
+        SDL_Window* mWindow;
+
+        int mWidth;
+        int mHeight;
+
+        bool mMouseFocus;
+        bool mKeyboardFocus;
+        bool mFullScreen;
+        bool mMinimized;
+	public:
+        LWindow();
+
+        bool init();
+
+        SDL_Renderer* createRenderer();
+
+        void handleEvent( SDL_Event& e );
+
+        void free();
+
+        int getWidth();
+        int getHeight();
+
+        bool hasMouseFocus();
+        bool hasKeyboardFocus();
+        bool isMinimized();
+};
 
 class LTexture
 {
@@ -78,7 +110,7 @@ bool loadMedia();
 
 void close();
 
-SDL_Window* gWindow = NULL;
+LWindow gWindow;
 
 SDL_Renderer* gRenderer = NULL;
 
@@ -93,6 +125,147 @@ LTexture gInputTextTexture;
 LTexture gDataTextures[ TOTAL_DATA ];
 
 Sint32 gData[ TOTAL_DATA ];
+
+LWindow::LWindow()
+{
+    mWindow = NULL;
+    mMouseFocus = false;
+    mKeyboardFocus = false;
+    mFullScreen = false;
+    mMinimized = false;
+    mWidth = 0;
+    mHeight = 0;
+}
+
+bool LWindow::init()
+{
+	// cria janela
+    mWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE );
+    if( mWindow != NULL )
+    {
+        mMouseFocus = true;
+        mKeyboardFocus = true;
+        mWidth = SCREEN_WIDTH;
+        mHeight = SCREEN_HEIGHT;
+    }
+
+    return mWindow != NULL;
+}
+
+SDL_Renderer* LWindow::createRenderer()
+{
+    return SDL_CreateRenderer( mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+}
+
+void LWindow::handleEvent( SDL_Event& e )
+{
+    if( e.type == SDL_WINDOWEVENT )
+    {
+        bool updateCaption = false;
+		switch( e.window.event )
+        {
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+				mWidth = e.window.data1;
+				mHeight = e.window.data2;
+				SDL_RenderPresent( gRenderer );
+				break;
+
+            case SDL_WINDOWEVENT_EXPOSED:
+				SDL_RenderPresent( gRenderer );
+				break;
+
+            case SDL_WINDOWEVENT_ENTER:
+				mMouseFocus = true;
+				updateCaption = true;
+				break;
+            
+            case SDL_WINDOWEVENT_LEAVE:
+				mMouseFocus = false;
+				updateCaption = true;
+				break;
+
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+				mKeyboardFocus = true;
+				updateCaption = true;
+				break;
+
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+				mKeyboardFocus = false;
+				updateCaption = true;
+				break;
+
+            case SDL_WINDOWEVENT_MINIMIZED:
+				mMinimized = true;
+				break;
+
+            case SDL_WINDOWEVENT_MAXIMIZED:
+				mMinimized = false;
+				break;
+            
+            case SDL_WINDOWEVENT_RESTORED:
+				mMinimized = false;
+				break;
+        }
+        if( updateCaption )
+        {
+            std::stringstream caption;
+            caption << "Estudo 4 - Foco do Mouse:" << ( ( mMouseFocus ) ? "Sim" : "Nao" ) << " Foco do Teclado:" << ( ( mKeyboardFocus ) ? "Sim" : "Nao" );
+            SDL_SetWindowTitle( mWindow, caption.str().c_str() );
+        }
+    }
+    else if( e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN )
+    {
+        if( mFullScreen )
+        {
+            SDL_SetWindowFullscreen( mWindow, SDL_FALSE );
+            mFullScreen = false;
+        }
+        else
+        {
+            SDL_SetWindowFullscreen( mWindow, SDL_TRUE );
+            mFullScreen = true;
+            mMinimized = false;
+        }
+    }
+}
+
+void LWindow::free()
+{
+	if( mWindow != NULL )
+	{
+		SDL_DestroyWindow( mWindow );
+	}
+
+	mMouseFocus = false;
+	mKeyboardFocus = false;
+	mWidth = 0;
+	mHeight = 0;
+}
+
+int LWindow::getWidth()
+{
+    return mWidth;
+}
+
+int LWindow::getHeight()
+{
+    return mHeight;
+}
+
+bool LWindow::hasMouseFocus()
+{
+    return mMouseFocus;
+}
+
+bool LWindow::hasKeyboardFocus()
+{
+    return mKeyboardFocus;
+}
+
+bool LWindow::isMinimized()
+{
+    return mMinimized;
+}
 
 LTexture::LTexture()
 {
@@ -301,15 +474,14 @@ bool init()
 			printf( "Warning: Linear texture filtering not enabled!" );
 		}
 
-		gWindow = SDL_CreateWindow( "Estudo 4", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-		if( gWindow == NULL )
+		if( !gWindow.init() )
 		{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
 			success = false;
 		}
 		else
 		{
-			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+			gRenderer = gWindow.createRenderer();
 			if( gRenderer == NULL )
 			{
 				printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -451,9 +623,7 @@ void close()
 	gBGTexture.free();
 
 	SDL_DestroyRenderer( gRenderer );
-	SDL_DestroyWindow( gWindow );
-	gWindow = NULL;
-	gRenderer = NULL;
+	gWindow.free();
 
 	IMG_Quit();
 	SDL_Quit();
@@ -582,6 +752,7 @@ int main( int argc, char* args[] )
                     //     }
                     // }
 
+					gWindow.handleEvent( e );
 					dot.handleEvent( e );
 				}
 
@@ -613,42 +784,44 @@ int main( int argc, char* args[] )
 					camera.y = LEVEL_HEIGHT - camera.h;
 				}
 
-				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-				SDL_RenderClear( gRenderer );
-
-				// gBGTexture.render( 0, 0, &camera );
-				gBGTexture.render( scrollingOffset, 0 );
-				gBGTexture.render( scrollingOffset + gBGTexture.getWidth(), 0 );
-
-				if( renderText )
+				if( !gWindow.isMinimized() )
 				{
-					if(inputText != "")
+					SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+					SDL_RenderClear( gRenderer );
+
+					// gBGTexture.render( 0, 0, &camera );
+					gBGTexture.render( scrollingOffset, 0 );
+					gBGTexture.render( scrollingOffset + gBGTexture.getWidth(), 0 );
+
+					if( renderText )
 					{
-						gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
+						if(inputText != "")
+						{
+							gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
+						}
+						else
+						{
+							gInputTextTexture.loadFromRenderedText( " ", textColor );
+						}
+						
 					}
-					else
+
+					gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+					gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
+
+					for(int i = 0;i < TOTAL_DATA;i++)
 					{
-						gInputTextTexture.loadFromRenderedText( " ", textColor );
+						gDataTextures[i].render( ( SCREEN_WIDTH - gDataTextures[i].getWidth() ) / 2, gPromptTextTexture.getHeight() * 2 + gDataTextures[ 0 ].getHeight() * i );
 					}
-					
+
+					dot.render( camera.x, camera.y );
+
+					SDL_RenderPresent( gRenderer );
 				}
-
-				gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-                gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
-
-				for(int i = 0;i < TOTAL_DATA;i++)
-				{
-					gDataTextures[i].render( ( SCREEN_WIDTH - gDataTextures[i].getWidth() ) / 2, gPromptTextTexture.getHeight() * 2 + gDataTextures[ 0 ].getHeight() * i );
-				}
-
-				dot.render( camera.x, camera.y );
-
-				SDL_RenderPresent( gRenderer );
 			}
 
 			// Desabilita entrada de texto
 			SDL_StopTextInput();
-
 		}
 	}
 
