@@ -89,6 +89,22 @@ bool loadMedia()
 {
 	bool success = true;
 
+	g_engine.set_font(TTF_OpenFont( "res/pixel-font.ttf", 70 ));
+	if( g_engine.get_font() == NULL )
+	{
+		printf( "Failed to load pixel font! SDL_ttf Error: %s\n", TTF_GetError() );
+		success = false;
+	}
+	else
+	{
+		SDL_Color textColor = { 0xFF, 0xA5, 0x00, 0xFF };
+		if( !title_text_texture.loadFromRenderedText( g_engine.get_renderer(), g_engine.get_font(), "COW GAME!", textColor ) )
+		{
+			printf( "Failed to render prompt text!\n" );
+			success = false;
+		}
+	}
+
 	g_engine.set_font(TTF_OpenFont( "res/pixel-font.ttf", 28 ));
 	if( g_engine.get_font() == NULL )
 	{
@@ -153,7 +169,7 @@ int main( int argc, char* args[] )
 
 			SDL_Event e;
 
-			Entity dot;
+			Entity player;
 
             // FOR SOME REASON IT ERASES THE TEXTURE
             // dot.set_texture(gDotTexture);
@@ -176,14 +192,27 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
+					else if( e.type == SDL_KEYDOWN)
+					{
+						switch( current_scene )
+						{
+							case 0:
+								if( e.key.keysym.sym == SDLK_RETURN ) current_scene = 1;
 
-					dot.handleEvent( e );
+								break;
+							case 1:
+
+								break;
+						}
+					}
+
+					player.handleEvent( e );
 				}
 
 				SDL_SetRenderDrawColor( g_engine.get_renderer(), 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( g_engine.get_renderer() );
 
-				switch(current_scene)
+				switch( current_scene )
 				{
 					case 0:
 						scrolling_offset--;
@@ -195,12 +224,14 @@ int main( int argc, char* args[] )
 
 						cowbg_texture.render( g_engine.get_renderer(), scrolling_offset, -cowbg_texture.getHeight() / 3 + (scrolling_offset * scrolling_up) );
 
+						title_text_texture.render( g_engine.get_renderer(), ( SCREEN_WIDTH - title_text_texture.getWidth() ) / 2, (SCREEN_HEIGHT - title_text_texture.getHeight() ) / 2 );
+
 						break;
 					case 1:
-						dot.move();
+						player.move();
 
-						camera.x = ( dot.getPosX() + 20 / 2 ) - SCREEN_WIDTH / 2;
-						camera.y = ( dot.getPosY() + 20 / 2 ) - SCREEN_HEIGHT / 2;
+						camera.x = ( player.getPosX() + 20 / 2 ) - SCREEN_WIDTH / 2;
+						camera.y = ( player.getPosY() + 20 / 2 ) - SCREEN_HEIGHT / 2;
 
 						if( camera.x < 0 )
 						{ 
@@ -222,7 +253,7 @@ int main( int argc, char* args[] )
 
 						prompt_text_texture.render( g_engine.get_renderer(), ( SCREEN_WIDTH - prompt_text_texture.getWidth() ) / 2, 0 );
 
-						player_texture.render(g_engine.get_renderer(), dot.getPosX() - camera.x, dot.getPosY()-camera.y);
+						player_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y);
 
 						break;
 				}
