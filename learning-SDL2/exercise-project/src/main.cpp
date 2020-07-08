@@ -26,11 +26,11 @@ void close();
 
 Engine g_engine;
 
-Texture gDotTexture;
-Texture gBGTexture;
+Texture player_texture;
+Texture cowbg_texture;
 
-Texture gPromptTextTexture;
-Texture gInputTextTexture;
+Texture prompt_text_texture;
+Texture title_text_texture;
 
 bool init()
 {
@@ -48,7 +48,7 @@ bool init()
 			printf( "Warning: Linear texture filtering not enabled!" );
 		}
 
-		g_engine.set_window(SDL_CreateWindow( "Estudo 4", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN ));
+		g_engine.set_window(SDL_CreateWindow( "Cow Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN ));
 		if( g_engine.get_window() == NULL )
 		{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -89,7 +89,7 @@ bool loadMedia()
 {
 	bool success = true;
 
-	g_engine.set_font(TTF_OpenFont( "pixel-font.ttf", 28 ));
+	g_engine.set_font(TTF_OpenFont( "res/pixel-font.ttf", 28 ));
 	if( g_engine.get_font() == NULL )
 	{
 		printf( "Failed to load pixel font! SDL_ttf Error: %s\n", TTF_GetError() );
@@ -98,22 +98,22 @@ bool loadMedia()
 	else
 	{
 		SDL_Color textColor = { 0, 0, 0, 0xFF };
-		if( !gPromptTextTexture.loadFromRenderedText( g_engine.get_renderer(), g_engine.get_font(), "Prompt Text", textColor ) )
+		if( !prompt_text_texture.loadFromRenderedText( g_engine.get_renderer(), g_engine.get_font(), "Prompt Text", textColor ) )
 		{
 			printf( "Failed to render prompt text!\n" );
 			success = false;
 		}
 	}
 
-	if( !gDotTexture.loadFromFile( g_engine.get_renderer(), "dot.bmp" ) )
+	if( !cowbg_texture.loadFromFile( g_engine.get_renderer(), "res/cowbg.png" ) )
 	{
-		printf( "Failed to load dot texture!\n" );
+		printf( "Failed to load background texture!\n" );
 		success = false;
 	}
 
-	if( !gBGTexture.loadFromFile( g_engine.get_renderer(), "bg1.png" ) )
+	if( !player_texture.loadFromFile( g_engine.get_renderer(), "res/dot.bmp" ) )
 	{
-		printf( "Failed to load background texture!\n" );
+		printf( "Failed to load dot texture!\n" );
 		success = false;
 	}
 
@@ -122,8 +122,8 @@ bool loadMedia()
 
 void close()
 {
-	gDotTexture.free();
-	gBGTexture.free();
+	player_texture.free();
+	cowbg_texture.free();
 
 	SDL_DestroyRenderer( g_engine.get_renderer() );
 	SDL_DestroyWindow( g_engine.get_window() );
@@ -148,7 +148,7 @@ int main( int argc, char* args[] )
 			printf( "Failed to load media!\n" );
 		}
 		else
-		{	
+		{
 			bool quit = false;
 
 			SDL_Event e;
@@ -159,6 +159,11 @@ int main( int argc, char* args[] )
             // dot.set_texture(gDotTexture);
 
 			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+
+			int current_scene = 0;
+
+			int scrolling_offset = 0;
+			int scrolling_up = 1;
 
 			while( !quit )
 			{
@@ -175,40 +180,52 @@ int main( int argc, char* args[] )
 					dot.handleEvent( e );
 				}
 
-				dot.move();
-
-				// camera.x = ( dot.getPosX() + Entity::DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
-				// camera.y = ( dot.getPosY() + Entity::DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
-
-                camera.x = ( dot.getPosX() + 20 / 2 ) - SCREEN_WIDTH / 2;
-				camera.y = ( dot.getPosY() + 20 / 2 ) - SCREEN_HEIGHT / 2;
-
-				if( camera.x < 0 )
-				{ 
-					camera.x = 0;
-				}
-				if( camera.y < 0 )
-				{
-					camera.y = 0;
-				}
-				if( camera.x > LEVEL_WIDTH - camera.w )
-				{
-					camera.x = LEVEL_WIDTH - camera.w;
-				}
-				if( camera.y > LEVEL_HEIGHT - camera.h )
-				{
-					camera.y = LEVEL_HEIGHT - camera.h;
-				}
-
 				SDL_SetRenderDrawColor( g_engine.get_renderer(), 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( g_engine.get_renderer() );
 
-				gBGTexture.render( g_engine.get_renderer(), 0, 0, &camera );
+				switch(current_scene)
+				{
+					case 0:
+						scrolling_offset--;
+						if( scrolling_offset < -cowbg_texture.getWidth() / 3 ) 
+						{
+							scrolling_offset = 0;
+							scrolling_up = scrolling_up * (-1);
+						} 
 
-				gPromptTextTexture.render( g_engine.get_renderer(), ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+						cowbg_texture.render( g_engine.get_renderer(), scrolling_offset, -cowbg_texture.getHeight() / 3 + (scrolling_offset * scrolling_up) );
 
-				// dot.get_texture().render( g_engine.get_renderer(), dot.getPosX() - camera.x, dot.getPosY() - camera.y );
-                gDotTexture.render(g_engine.get_renderer(), dot.getPosX() - camera.x, dot.getPosY()-camera.y);
+						break;
+					case 1:
+						dot.move();
+
+						camera.x = ( dot.getPosX() + 20 / 2 ) - SCREEN_WIDTH / 2;
+						camera.y = ( dot.getPosY() + 20 / 2 ) - SCREEN_HEIGHT / 2;
+
+						if( camera.x < 0 )
+						{ 
+							camera.x = 0; 
+						}
+						if( camera.y < 0 )
+						{
+							camera.y = 0;
+						}
+						if( camera.x > LEVEL_WIDTH - camera.w )
+						{
+							camera.x = LEVEL_WIDTH - camera.w;
+						}
+						if( camera.y > LEVEL_HEIGHT - camera.h )
+						{
+							camera.y = LEVEL_HEIGHT - camera.h;
+						}
+
+
+						prompt_text_texture.render( g_engine.get_renderer(), ( SCREEN_WIDTH - prompt_text_texture.getWidth() ) / 2, 0 );
+
+						player_texture.render(g_engine.get_renderer(), dot.getPosX() - camera.x, dot.getPosY()-camera.y);
+
+						break;
+				}
 
 				SDL_RenderPresent( g_engine.get_renderer() );
 			}
