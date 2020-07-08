@@ -1,19 +1,17 @@
-#OBJS specifies which files to compile as part of the project
-OBJS = SDL_3.cpp
+FILE = SDL_3.cpp
 
-#CC specifies which compiler we're using
+# CC especifica o compilador usado
 CC = g++
 
-#COMPILER_FLAGS specifies the additional compilation options we're using
-# -w suppresses all warnings
+# COMPILER_FLAGS especifica as opcoes de compilacao adicionais sendo usadas
 COMPILER_FLAGS = 
 
-#LINKER_FLAGS specifies the libraries we're linking against
+# LINKER_FLAGS especifica as bibliotecas que estamos vinculando
 LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf
 
-#OBJ_NAME specifies the name of our exectuable
-OBJ_NAME = prog
+# EXE especifica o nome do nosso executavel
+EXE = prog
 
-#This is the target that compiles our executable
-all : $(OBJS)
-	$(CC) $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+# Compilando o executavel...
+all : $(FILE)
+	$(CC) $(FILE) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(EXE)
