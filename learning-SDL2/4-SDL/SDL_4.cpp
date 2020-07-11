@@ -1,7 +1,8 @@
 // Linha de compilacao
 // g++ file.cpp -w -lSDL2 -lSDL2_image -o prog
 
-// Aulas 30-?
+// Aulas 30-36
+// Aula 34 nao consta
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
