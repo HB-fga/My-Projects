@@ -19,11 +19,14 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 const int TOTAL_DATA = 10;
+const int TOTAL_WINDOWS = 3;
 
 class LWindow
 {
     private:
         SDL_Window* mWindow;
+		SDL_Renderer* mRenderer;
+		int mWindowID;
 
         int mWidth;
         int mHeight;
@@ -32,14 +35,19 @@ class LWindow
         bool mKeyboardFocus;
         bool mFullScreen;
         bool mMinimized;
+		bool mShown;
 	public:
         LWindow();
 
         bool init();
 
-        SDL_Renderer* createRenderer();
+        // SDL_Renderer* createRenderer();
 
         void handleEvent( SDL_Event& e );
+
+		void focus();
+
+		void render();
 
         void free();
 
@@ -49,6 +57,7 @@ class LWindow
         bool hasMouseFocus();
         bool hasKeyboardFocus();
         bool isMinimized();
+		bool isShown();
 };
 
 class LTexture
@@ -110,7 +119,7 @@ bool loadMedia();
 
 void close();
 
-LWindow gWindow;
+LWindow gWindows[ TOTAL_WINDOWS ];
 
 SDL_Renderer* gRenderer = NULL;
 
@@ -147,23 +156,45 @@ bool LWindow::init()
         mKeyboardFocus = true;
         mWidth = SCREEN_WIDTH;
         mHeight = SCREEN_HEIGHT;
-    }
 
-    return mWindow != NULL;
-}
+		// cria renderer pra janela
+		mRenderer = SDL_CreateRenderer( mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+		if( mRenderer == NULL )
+		{
+			printf( "Renderer could not be created\n" );
+			SDL_DestroyWindow( mWindow );
+			mWindow = NULL;
+		}
+		else
+		{
+			SDL_SetRenderDrawColor(mRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+			mWindowID = SDL_GetWindowID( mWindow );
+			mShown = true;
+		}
+	}
+	else
+	{
+		printf( "Window could not be created\n" );
+	}
 
-SDL_Renderer* LWindow::createRenderer()
-{
-    return SDL_CreateRenderer( mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+	return mWindow != NULL && mRenderer != NULL;	
 }
 
 void LWindow::handleEvent( SDL_Event& e )
 {
-    if( e.type == SDL_WINDOWEVENT )
+    if( e.type == SDL_WINDOWEVENT && e.window.windowID == mWindowID )
     {
         bool updateCaption = false;
 		switch( e.window.event )
         {
+            case SDL_WINDOWEVENT_SHOWN:
+				mShown = true;
+				break;
+
+            case SDL_WINDOWEVENT_HIDDEN:
+				mShown = false;
+				break;
+
             case SDL_WINDOWEVENT_SIZE_CHANGED:
 				mWidth = e.window.data1;
 				mHeight = e.window.data2;
@@ -205,11 +236,15 @@ void LWindow::handleEvent( SDL_Event& e )
             case SDL_WINDOWEVENT_RESTORED:
 				mMinimized = false;
 				break;
+
+			case SDL_WINDOWEVENT_CLOSE:
+				SDL_HideWindow( mWindow );
+				break;
         }
         if( updateCaption )
         {
             std::stringstream caption;
-            caption << "Estudo 4 - Foco do Mouse:" << ( ( mMouseFocus ) ? "Sim" : "Nao" ) << " Foco do Teclado:" << ( ( mKeyboardFocus ) ? "Sim" : "Nao" );
+            caption << "Estudo 4 - ID: " << mWindowID << " Foco do Mouse:" << ( ( mMouseFocus ) ? "Sim" : "Nao" ) << " Foco do Teclado:" << ( ( mKeyboardFocus ) ? "Sim" : "Nao" );
             SDL_SetWindowTitle( mWindow, caption.str().c_str() );
         }
     }
@@ -227,6 +262,27 @@ void LWindow::handleEvent( SDL_Event& e )
             mMinimized = false;
         }
     }
+}
+
+void LWindow::focus()
+{
+	if( !mShown )
+	{
+		SDL_ShowWindow( mWindow );
+	}
+
+	SDL_RaiseWindow( mWindow );
+}
+
+void LWindow::render()
+{
+	if( !mMinimized )
+	{
+		SDL_SetRenderDrawColor( mRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+		SDL_RenderClear( mRenderer );
+
+		SDL_RenderPresent( mRenderer );
+	}
 }
 
 void LWindow::free()
@@ -265,6 +321,11 @@ bool LWindow::hasKeyboardFocus()
 bool LWindow::isMinimized()
 {
     return mMinimized;
+}
+
+bool LWindow::isShown()
+{
+	return mShown;
 }
 
 LTexture::LTexture()
@@ -474,38 +535,10 @@ bool init()
 			printf( "Warning: Linear texture filtering not enabled!" );
 		}
 
-		if( !gWindow.init() )
+		if( !gWindows[ 0 ].init() )
 		{
-			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
+			printf( "Window 0 could not be created! SDL Error: %s\n", SDL_GetError() );
 			success = false;
-		}
-		else
-		{
-			gRenderer = gWindow.createRenderer();
-			if( gRenderer == NULL )
-			{
-				printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
-				success = false;
-			}
-			else
-			{
-				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-
-				int imgFlags = IMG_INIT_PNG;
-				if( !( IMG_Init( imgFlags ) & imgFlags ) )
-				{
-					printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
-					success = false;
-				}
-
-				#if defined(_SDL_TTF_H) || defined(SDL_TTF_H)
-				if( TTF_Init() == -1 )
-				{
-					printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
-					success = false;
-				}
-				#endif
-			}
 		}
 	}
 
@@ -516,87 +549,87 @@ bool loadMedia()
 {
 	bool success = true;
 
-	SDL_Color textColor = { 0, 0, 0, 0xFF };
-	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+	// SDL_Color textColor = { 0, 0, 0, 0xFF };
+	// SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
-	SDL_RWops* file = SDL_RWFromFile( "nums.bin", "r+b" );
+	// SDL_RWops* file = SDL_RWFromFile( "nums.bin", "r+b" );
 
-	if( file == NULL )
-	{
-		printf( "Warning: Unable to open file!\n" );
+	// if( file == NULL )
+	// {
+	// 	printf( "Warning: Unable to open file!\n" );
 
-		file = SDL_RWFromFile( "nums.bin", "w+b" );
-		if( file != NULL )
-		{
-			printf( "New file created!\n" );
+	// 	file = SDL_RWFromFile( "nums.bin", "w+b" );
+	// 	if( file != NULL )
+	// 	{
+	// 		printf( "New file created!\n" );
 
-			for(int i = 0; i < TOTAL_DATA; i++)
-			{
-				gData[i] = 0;
-				SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1 );
-			}
+	// 		for(int i = 0; i < TOTAL_DATA; i++)
+	// 		{
+	// 			gData[i] = 0;
+	// 			SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1 );
+	// 		}
 
-			SDL_RWclose( file );
+	// 		SDL_RWclose( file );
 
-		}
-		else
-		{
-			printf( "Error: Unable to create file!\n" );
-			success = false;
-		}
+	// 	}
+	// 	else
+	// 	{
+	// 		printf( "Error: Unable to create file!\n" );
+	// 		success = false;
+	// 	}
 		
-	}
-	else
-	{
-		printf( "Reading file...!\n" );
-		for(int i = 0;i < TOTAL_DATA;i++)
-		{
-			SDL_RWread( file, &gData[i], sizeof(Sint32), 1 );
-		}
+	// }
+	// else
+	// {
+	// 	printf( "Reading file...!\n" );
+	// 	for(int i = 0;i < TOTAL_DATA;i++)
+	// 	{
+	// 		SDL_RWread( file, &gData[i], sizeof(Sint32), 1 );
+	// 	}
 
-		SDL_RWclose( file );
-	}
+	// 	SDL_RWclose( file );
+	// }
 	
 
-	gFont = TTF_OpenFont( "pixel-font.ttf", 28 );
-	if( gFont == NULL )
-	{
-		printf( "Failed to load pixel font! SDL_ttf Error: %s\n", TTF_GetError() );
-		success = false;
-	}
-	else
-	{
-		SDL_Color textColor = { 0, 0, 0, 0xFF };
-		if( !gPromptTextTexture.loadFromRenderedText( "Enter Text:", textColor ) )
-		{
-			printf( "Failed to render prompt text!\n" );
-			success = false;
-		}
-	}
+	// gFont = TTF_OpenFont( "pixel-font.ttf", 28 );
+	// if( gFont == NULL )
+	// {
+	// 	printf( "Failed to load pixel font! SDL_ttf Error: %s\n", TTF_GetError() );
+	// 	success = false;
+	// }
+	// else
+	// {
+	// 	SDL_Color textColor = { 0, 0, 0, 0xFF };
+	// 	if( !gPromptTextTexture.loadFromRenderedText( "Enter Text:", textColor ) )
+	// 	{
+	// 		printf( "Failed to render prompt text!\n" );
+	// 		success = false;
+	// 	}
+	// }
 
-	gDataTextures[ 0 ].loadFromRenderedText( std::to_string( gData[ 0 ] ), highlightColor );
-    for( int i = 1; i < TOTAL_DATA; ++i )
-    {
-        gDataTextures[ i ].loadFromRenderedText( std::to_string( gData[ i ] ), textColor );
-    }
+	// gDataTextures[ 0 ].loadFromRenderedText( std::to_string( gData[ 0 ] ), highlightColor );
+    // for( int i = 1; i < TOTAL_DATA; ++i )
+    // {
+    //     gDataTextures[ i ].loadFromRenderedText( std::to_string( gData[ i ] ), textColor );
+    // }
 
-	if( !gDotTexture.loadFromFile( "dot.bmp" ) )
-	{
-		printf( "Failed to load dot texture!\n" );
-		success = false;
-	}
+	// if( !gDotTexture.loadFromFile( "dot.bmp" ) )
+	// {
+	// 	printf( "Failed to load dot texture!\n" );
+	// 	success = false;
+	// }
 
-	// if( !gBGTexture.loadFromFile( "bg1.png" ) )
+	// // if( !gBGTexture.loadFromFile( "bg1.png" ) )
+	// // {
+	// // 	printf( "Failed to load background texture!\n" );
+	// // 	success = false;
+	// // }
+
+	// if( !gBGTexture.loadFromFile( "bg2.png" ) )
 	// {
 	// 	printf( "Failed to load background texture!\n" );
 	// 	success = false;
 	// }
-
-	if( !gBGTexture.loadFromFile( "bg2.png" ) )
-	{
-		printf( "Failed to load background texture!\n" );
-		success = false;
-	}
 
 	return success;
 }
@@ -622,8 +655,10 @@ void close()
 	gDotTexture.free();
 	gBGTexture.free();
 
-	SDL_DestroyRenderer( gRenderer );
-	gWindow.free();
+	for( int i = 0; i < TOTAL_WINDOWS; ++i )
+    {
+        gWindows[ i ].free();
+    }
 
 	IMG_Quit();
 	SDL_Quit();
@@ -643,15 +678,20 @@ int main( int argc, char* args[] )
 		}
 		else
 		{	
+			for( int i = 1; i < TOTAL_WINDOWS; ++i )
+			{
+				gWindows[ i ].init();
+			}
+
 			bool quit = false;
 
 			SDL_Event e;
 
 			Dot dot;
 
-			// Cor do texto
-            SDL_Color textColor = { 0, 0, 0, 0xFF };
-            SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+			// // Cor do texto
+            // SDL_Color textColor = { 0, 0, 0, 0xFF };
+            // SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
 			// Deslocamento do background animado
 			int scrollingOffset = 0;
@@ -659,15 +699,15 @@ int main( int argc, char* args[] )
 			// // Area da camera 
 			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
-			// Texto atual
-			std::string inputText = "Some Text";
-			gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
+			// // Texto atual
+			// std::string inputText = "Some Text";
+			// gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
 
             // Input atual
             int currentData = 0;
 
-			// Habilita entrada de texto
-			SDL_StartTextInput();
+			// // Habilita entrada de texto
+			// SDL_StartTextInput();
 
 			while( !quit )
 			{
@@ -680,47 +720,72 @@ int main( int argc, char* args[] )
 					{
 						quit = true;
 					}
-					else if( e.type == SDL_KEYDOWN )
+
+					// // aula 33
+					// else if( e.type == SDL_KEYDOWN )
+					// {
+					// 	switch( e.key.keysym.sym )
+					// 	{
+					// 		case SDLK_UP:
+					// 			gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), textColor );
+								
+					// 			--currentData;
+					// 			if( currentData < 0 )
+					// 			{
+					// 				currentData = TOTAL_DATA -1;
+					// 			}
+
+					// 			gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+					// 			break;
+
+					// 		case SDLK_DOWN:
+					// 			gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), textColor );
+								
+					// 			++currentData;
+					// 			if( currentData == TOTAL_DATA )
+					// 			{
+					// 				currentData = TOTAL_DATA -1;
+					// 			}
+
+					// 			gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+					// 			break;
+
+					// 		case SDLK_LEFT:
+					// 			--gData[ currentData ];
+					// 			gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+                    //         break;
+                            
+                    //         case SDLK_RIGHT:
+					// 			++gData[ currentData ];
+					// 			gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
+
+                    //         break;
+					// 	}
+					// }
+
+					for(int i = 0;i < TOTAL_WINDOWS;i++)
+					{
+						gWindows[ i ].handleEvent( e );
+					}
+
+					if( e.type == SDL_KEYDOWN )
 					{
 						switch( e.key.keysym.sym )
 						{
-							case SDLK_UP:
-								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), textColor );
+							case SDLK_1:
+							gWindows[ 0 ].focus();
+							break;
+
+							case SDLK_2:
+							gWindows[ 1 ].focus();
+							break;
 								
-								--currentData;
-								if( currentData < 0 )
-								{
-									currentData = TOTAL_DATA -1;
-								}
-
-								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
-
-								break;
-
-							case SDLK_DOWN:
-								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), textColor );
-								
-								++currentData;
-								if( currentData == TOTAL_DATA )
-								{
-									currentData = TOTAL_DATA -1;
-								}
-
-								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
-
-								break;
-
-							case SDLK_LEFT:
-								--gData[ currentData ];
-								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
-
-                            break;
-                            
-                            case SDLK_RIGHT:
-								++gData[ currentData ];
-								gDataTextures[ currentData ].loadFromRenderedText( std::to_string( gData[ currentData ] ), highlightColor );
-
-                            break;
+							case SDLK_3:
+							gWindows[ 2 ].focus();
+							break;
 						}
 					}
 
@@ -752,7 +817,6 @@ int main( int argc, char* args[] )
                     //     }
                     // }
 
-					gWindow.handleEvent( e );
 					dot.handleEvent( e );
 				}
 
@@ -784,44 +848,66 @@ int main( int argc, char* args[] )
 					camera.y = LEVEL_HEIGHT - camera.h;
 				}
 
-				if( !gWindow.isMinimized() )
-				{
-					SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-					SDL_RenderClear( gRenderer );
+				//  // aula 35
+				// if( !gWindows[ 0 ].isMinimized() )
+				// {
+				// 	SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+				// 	SDL_RenderClear( gRenderer );
 
-					// gBGTexture.render( 0, 0, &camera );
-					gBGTexture.render( scrollingOffset, 0 );
-					gBGTexture.render( scrollingOffset + gBGTexture.getWidth(), 0 );
+				// 	// gBGTexture.render( 0, 0, &camera );
+				// 	gBGTexture.render( scrollingOffset, 0 );
+				// 	gBGTexture.render( scrollingOffset + gBGTexture.getWidth(), 0 );
 
-					if( renderText )
-					{
-						if(inputText != "")
-						{
-							gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
-						}
-						else
-						{
-							gInputTextTexture.loadFromRenderedText( " ", textColor );
-						}
+				// 	if( renderText )
+				// 	{
+				// 		if(inputText != "")
+				// 		{
+				// 			gInputTextTexture.loadFromRenderedText( inputText.c_str(), textColor );
+				// 		}
+				// 		else
+				// 		{
+				// 			gInputTextTexture.loadFromRenderedText( " ", textColor );
+				// 		}
 						
-					}
+				// 	}
 
-					gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-					gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
+				// 	gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+				// 	gInputTextTexture.render( ( SCREEN_WIDTH - gInputTextTexture.getWidth() ) / 2, gPromptTextTexture.getHeight() );
 
-					for(int i = 0;i < TOTAL_DATA;i++)
-					{
-						gDataTextures[i].render( ( SCREEN_WIDTH - gDataTextures[i].getWidth() ) / 2, gPromptTextTexture.getHeight() * 2 + gDataTextures[ 0 ].getHeight() * i );
-					}
+				// 	for(int i = 0;i < TOTAL_DATA;i++)
+				// 	{
+				// 		gDataTextures[i].render( ( SCREEN_WIDTH - gDataTextures[i].getWidth() ) / 2, gPromptTextTexture.getHeight() * 2 + gDataTextures[ 0 ].getHeight() * i );
+				// 	}
 
-					dot.render( camera.x, camera.y );
+				// 	dot.render( camera.x, camera.y );
 
-					SDL_RenderPresent( gRenderer );
+				// 	SDL_RenderPresent( gRenderer );
+				// }
+
+				for(int i = 0;i < TOTAL_WINDOWS; ++i)
+				{
+					gWindows[ i ].render();
 				}
+					
+				bool allWindowsClosed = true;
+				for( int i = 0; i < TOTAL_WINDOWS; ++i )
+				{
+					if( gWindows[ i ].isShown() )
+					{
+						allWindowsClosed = false;
+						break;
+					}
+				}
+
+				if( allWindowsClosed )
+				{
+					quit = true;
+				}
+
 			}
 
-			// Desabilita entrada de texto
-			SDL_StopTextInput();
+			// // Desabilita entrada de texto
+			// SDL_StopTextInput();
 		}
 	}
 

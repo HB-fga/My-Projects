@@ -100,7 +100,7 @@ bool loadMedia()
 		SDL_Color textColor = { 0xFF, 0xA5, 0x00, 0xFF };
 		if( !title_text_texture.loadFromRenderedText( g_engine.get_renderer(), g_engine.get_font(), "COW GAME!", textColor ) )
 		{
-			printf( "Failed to render prompt text!\n" );
+			printf( "Failed to render title text!\n" );
 			success = false;
 		}
 	}
@@ -123,13 +123,13 @@ bool loadMedia()
 
 	if( !cowbg_texture.loadFromFile( g_engine.get_renderer(), "res/cowbg.png" ) )
 	{
-		printf( "Failed to load background texture!\n" );
+		printf( "Failed to load cow background texture!\n" );
 		success = false;
 	}
 
-	if( !player_texture.loadFromFile( g_engine.get_renderer(), "res/dot.bmp" ) )
+	if( !player_texture.loadFromFile( g_engine.get_renderer(), "res/player-idle1.png" ) )
 	{
-		printf( "Failed to load dot texture!\n" );
+		printf( "Failed to load player idle 1 texture!\n" );
 		success = false;
 	}
 
