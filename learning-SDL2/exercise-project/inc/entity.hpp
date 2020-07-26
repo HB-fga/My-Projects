@@ -22,10 +22,10 @@ class Entity
 		Entity();
 		~Entity();
 
-		int entity_width = 20;
-		int entity_height = 20;
+		const int entity_width = 20;
+		const int entity_height = 20;
 
-		int entity_speed = 10;
+		const int entity_speed = 1;
 
 		void handleEvent( SDL_Event& e );
 		void move();

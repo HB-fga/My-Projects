@@ -1,6 +1,8 @@
 // Linha de compilacao
 // g++ file.cpp -w -lSDL2 -lSDL2_image -o prog
 
+// I KNOW THIS CODE IS A MESS, BUT I'M STILL LEARNING
+
 #include "engine.hpp"
 #include "texture.hpp"
 #include "entity.hpp"
@@ -18,6 +20,9 @@ const int LEVEL_HEIGHT = 960;
 const int SCREEN_WIDTH = 960;
 const int SCREEN_HEIGHT = 540;
 
+const int IDLE_FRAMES = 2;
+const int WALK_FRAMES = 4;
+
 bool init();
 
 bool loadMedia();
@@ -26,8 +31,15 @@ void close();
 
 Engine g_engine;
 
-Texture player_texture;
 Texture cowbg_texture;
+
+Texture player_idle1_texture;
+Texture player_idle2_texture;
+
+Texture player_walk1_texture;
+Texture player_walk2_texture;
+Texture player_walk3_texture;
+Texture player_walk4_texture;
 
 Texture prompt_text_texture;
 Texture title_text_texture;
@@ -127,9 +139,35 @@ bool loadMedia()
 		success = false;
 	}
 
-	if( !player_texture.loadFromFile( g_engine.get_renderer(), "res/player-idle1.png" ) )
+	if( !player_idle1_texture.loadFromFile( g_engine.get_renderer(), "res/player-idle1.png" ) )
 	{
 		printf( "Failed to load player idle 1 texture!\n" );
+		success = false;
+	}
+	if( !player_idle2_texture.loadFromFile( g_engine.get_renderer(), "res/player-idle2.png" ) )
+	{
+		printf( "Failed to load player idle 2 texture!\n" );
+		success = false;
+	}
+
+	if( !player_walk1_texture.loadFromFile( g_engine.get_renderer(), "res/player-walk1.png" ) )
+	{
+		printf( "Failed to load player walk 1 texture!\n" );
+		success = false;
+	}
+	if( !player_walk2_texture.loadFromFile( g_engine.get_renderer(), "res/player-walk2.png" ) )
+	{
+		printf( "Failed to load player walk 2 texture!\n" );
+		success = false;
+	}
+	if( !player_walk3_texture.loadFromFile( g_engine.get_renderer(), "res/player-walk3.png" ) )
+	{
+		printf( "Failed to load player walk 3 texture!\n" );
+		success = false;
+	}
+	if( !player_walk4_texture.loadFromFile( g_engine.get_renderer(), "res/player-walk4.png" ) )
+	{
+		printf( "Failed to load player walk 4 texture!\n" );
 		success = false;
 	}
 
@@ -138,7 +176,13 @@ bool loadMedia()
 
 void close()
 {
-	player_texture.free();
+	player_idle1_texture.free();
+	player_idle2_texture.free();
+
+	player_walk1_texture.free();
+	player_walk2_texture.free();
+	player_walk3_texture.free();
+	player_walk4_texture.free();
 	cowbg_texture.free();
 
 	SDL_DestroyRenderer( g_engine.get_renderer() );
@@ -172,7 +216,7 @@ int main( int argc, char* args[] )
 			Entity player;
 
             // FOR SOME REASON IT ERASES THE TEXTURE
-            // dot.set_texture(gDotTexture);
+            // player.set_texture(player_texture);
 
 			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
@@ -180,6 +224,16 @@ int main( int argc, char* args[] )
 
 			int scrolling_offset = 0;
 			int scrolling_up = 1;
+
+			int player_lastx = 0;
+			int player_lasty = 0;
+
+			int player_animation_type = 0;
+
+			int walk_frame = 0;
+			int idle_frame = 0;
+
+			SDL_RendererFlip flip_type = SDL_FLIP_NONE;
 
 			while( !quit )
 			{
@@ -201,11 +255,10 @@ int main( int argc, char* args[] )
 
 								break;
 							case 1:
-
+								
 								break;
 						}
 					}
-
 					player.handleEvent( e );
 				}
 
@@ -230,6 +283,34 @@ int main( int argc, char* args[] )
 					case 1:
 						player.move();
 
+						if(player_lastx > player.getPosX())
+						{
+							flip_type = SDL_FLIP_HORIZONTAL;
+							player_animation_type = 1;
+							idle_frame = 0;
+						}
+						else if(player_lastx < player.getPosX())
+						{
+							flip_type = SDL_FLIP_NONE;
+							player_animation_type = 1;
+							idle_frame = 0;
+						}
+
+						if(player_lasty != player.getPosY())
+						{
+							player_animation_type = 1;
+							idle_frame = 0;
+						}
+
+						if( player_lastx == player.getPosX() && player_lasty == player.getPosY() )
+						{
+							player_animation_type = 0;
+							walk_frame = 0;
+						}
+
+						player_lastx = player.getPosX();
+						player_lasty = player.getPosY();
+
 						camera.x = ( player.getPosX() + 20 / 2 ) - SCREEN_WIDTH / 2;
 						camera.y = ( player.getPosY() + 20 / 2 ) - SCREEN_HEIGHT / 2;
 
@@ -253,7 +334,49 @@ int main( int argc, char* args[] )
 
 						prompt_text_texture.render( g_engine.get_renderer(), ( SCREEN_WIDTH - prompt_text_texture.getWidth() ) / 2, 0 );
 
-						player_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y);
+						switch (player_animation_type)
+						{
+							case 0:
+								if (idle_frame < 60)
+								{
+									player_idle1_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y, NULL, 0.0, NULL, flip_type);
+									idle_frame++;
+								}
+								else if ( idle_frame < 120 )
+								{
+									player_idle2_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y, NULL, 0.0, NULL, flip_type);
+									idle_frame++;
+
+									if(idle_frame == 120) idle_frame = 0;
+								}
+								
+								break;
+
+							case 1:
+								if (walk_frame < 10)
+								{
+									player_walk1_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y, NULL, 0.0, NULL, flip_type);
+									walk_frame++;
+								}
+								else if (walk_frame < 20)
+								{
+									player_walk2_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y, NULL, 0.0, NULL, flip_type);
+									walk_frame++;
+								}
+								else if (walk_frame < 30)
+								{
+									player_walk3_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y, NULL, 0.0, NULL, flip_type);
+									walk_frame++;
+								}
+								else if ( walk_frame < 40 )
+								{
+									player_walk4_texture.render(g_engine.get_renderer(), player.getPosX() - camera.x, player.getPosY()-camera.y, NULL, 0.0, NULL, flip_type);
+									walk_frame++;
+
+									if(walk_frame == 40) walk_frame = 0;
+								}
+								break;
+						}
 
 						break;
 				}
