@@ -334,6 +334,8 @@ int main( int argc, char* args[] )
 
 						prompt_text_texture.render( g_engine.get_renderer(), ( SCREEN_WIDTH - prompt_text_texture.getWidth() ) / 2, 0 );
 
+						cowbg_texture.render( g_engine.get_renderer(), 0, 0, &camera);
+
 						switch (player_animation_type)
 						{
 							case 0:
