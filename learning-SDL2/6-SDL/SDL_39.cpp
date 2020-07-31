@@ -82,7 +82,7 @@ class Particle
 		
 		Particle( int x, int y );
 		
-		void render();
+		void render( SDL_Rect& camera );
 
 		bool isDead();
 };
@@ -114,7 +114,7 @@ class Dot
 
 		Particle* particles[ TOTAL_PARTICLES ];
 		
-		void renderParticles();
+		void renderParticles( SDL_Rect& camera );
 
 	public:
 		
@@ -305,13 +305,13 @@ Particle::Particle( int x, int y )
     }
 }
 
-void Particle::render()
+void Particle::render( SDL_Rect& camera )
 {
-	mTexture->render( mPosX, mPosY );
+	mTexture->render( mPosX - camera.x, mPosY - camera.y );
     
     if( mFrame % 2 == 0 )
     {
-		gShimmerTexture.render( mPosX, mPosY );
+		gShimmerTexture.render( mPosX - camera.x, mPosY - camera.y );
     }
 
     mFrame++;
@@ -415,10 +415,10 @@ void Dot::render( SDL_Rect& camera)
 {
 	gDotTexture.render( mBox.x - camera.x, mBox.y - camera.y );
 
-	renderParticles();
+	renderParticles( camera );
 }
 
-void Dot::renderParticles()
+void Dot::renderParticles( SDL_Rect& camera )
 {
     for( int i = 0; i < TOTAL_PARTICLES; ++i )
     {
@@ -431,7 +431,7 @@ void Dot::renderParticles()
 
     for( int i = 0; i < TOTAL_PARTICLES; ++i )
     {
-        particles[ i ]->render();
+        particles[ i ]->render( camera );
     }
 }
 
