@@ -1,36 +1,14 @@
+// Aula 38
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <string>
-#include <fstream>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-const int LEVEL_WIDTH = 1280;
-const int LEVEL_HEIGHT = 960;
-
 const int TOTAL_PARTICLES = 20;
-
-const int TILE_WIDTH = 80;
-const int TILE_HEIGHT = 80;
-
-const int TOTAL_TILES = 192;
-const int TOTAL_TILE_SPRITES = 12;
-
-// tile ids
-const int TILE_RED = 0;
-const int TILE_GREEN = 1;
-const int TILE_BLUE = 2;
-const int TILE_CENTER = 3;
-const int TILE_TOP = 4;
-const int TILE_TOPRIGHT = 5;
-const int TILE_RIGHT = 6;
-const int TILE_BOTTOMRIGHT = 7;
-const int TILE_BOTTOM = 8;
-const int TILE_BOTTOMLEFT = 9;
-const int TILE_LEFT = 10;
-const int TILE_TOPLEFT = 11;
 
 class LTexture
 {
@@ -82,39 +60,25 @@ class Particle
 		
 		Particle( int x, int y );
 		
-		void render( SDL_Rect& camera );
+		void render();
 
 		bool isDead();
 };
 
-class Tile
-{
-	private:
-		SDL_Rect mBox;
 
-		int mType;
-
-	public:
-		Tile( int x, int y, int tileType );
-
-		void render( SDL_Rect& camera );
-
-		int getType();
-
-		SDL_Rect getBox();
-};
 
 class Dot
 {
     
     private:
-		SDL_Rect mBox;
-				
-		int mVelX, mVelY;
-
+		
 		Particle* particles[ TOTAL_PARTICLES ];
 		
-		void renderParticles( SDL_Rect& camera );
+		void renderParticles();
+		
+		int mPosX, mPosY;
+		
+		int mVelX, mVelY;
 
 	public:
 		
@@ -128,38 +92,26 @@ class Dot
 		
 		void handleEvent( SDL_Event& e );
 		
-		void move( Tile *tiles[] );
+		void move();
 
-		void setCamera( SDL_Rect& camera );
-
-		void render(SDL_Rect& camera );
+		void render();
 };
 
 bool init();
 
-bool loadMedia( Tile* tiles[] );
+bool loadMedia();
 
-void close( Tile* tiles[] );
-
-bool checkCollision( SDL_Rect a, SDL_Rect b );
-
-bool touchesWall( SDL_Rect box, Tile* tiles[] );
-
-bool setTiles( Tile *tiles[] );
+void close();
 
 SDL_Window* gWindow = NULL;
 
 SDL_Renderer* gRenderer = NULL;
 
 LTexture gDotTexture;
-
 LTexture gRedTexture;
 LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
-
-LTexture gTileTexture;
-SDL_Rect gTileClips[ TOTAL_TILE_SPRITES ];
 
 LTexture::LTexture()
 {
@@ -305,13 +257,13 @@ Particle::Particle( int x, int y )
     }
 }
 
-void Particle::render( SDL_Rect& camera )
+void Particle::render()
 {
-	mTexture->render( mPosX - camera.x, mPosY - camera.y );
+	mTexture->render( mPosX, mPosY );
     
     if( mFrame % 2 == 0 )
     {
-		gShimmerTexture.render( mPosX - camera.x, mPosY - camera.y );
+		gShimmerTexture.render( mPosX, mPosY );
     }
 
     mFrame++;
@@ -324,17 +276,15 @@ bool Particle::isDead()
 
 Dot::Dot()
 {
-    mBox.x = 0;
-    mBox.y = 0;
-	mBox.w = DOT_WIDTH;
-	mBox.h = DOT_HEIGHT;
+    mPosX = 0;
+    mPosY = 0;
 
     mVelX = 0;
     mVelY = 0;
     
     for( int i = 0; i < TOTAL_PARTICLES; ++i )
     {
-        particles[ i ] = new Particle( mBox.x, mBox.y );
+        particles[ i ] = new Particle( mPosX, mPosY );
     }
 }
 
@@ -371,97 +321,45 @@ void Dot::handleEvent( SDL_Event& e )
     }
 }
 
-void Dot::move( Tile *tiles[] )
+void Dot::move()
 {
-	mBox.x += mVelX;
+    mPosX += mVelX;
     
-    if( ( mBox.x < 0 ) || ( mBox.x + DOT_WIDTH > LEVEL_WIDTH ) || touchesWall( mBox, tiles ) )
+    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) )
     {
-        mBox.x -= mVelX;
+        mPosX -= mVelX;
     }
 
-    mBox.y += mVelY;
+    mPosY += mVelY;
     
-    if( ( mBox.y < 0 ) || ( mBox.y + DOT_HEIGHT > LEVEL_HEIGHT ) || touchesWall( mBox, tiles ) )
+    if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) )
     {
-        mBox.y -= mVelY;
+        mPosY -= mVelY;
     }
 }
 
-void Dot::setCamera( SDL_Rect& camera )
+void Dot::render()
 {
-	camera.x = ( mBox.x + DOT_WIDTH / 2 ) - SCREEN_WIDTH / 2;
-	camera.y = ( mBox.y + DOT_HEIGHT / 2 ) - SCREEN_HEIGHT / 2;
+	gDotTexture.render( mPosX, mPosY );
 
-	if( camera.x < 0 )
-	{
-		camera.x = 0;
-	}
-	if( camera.y < 0 )
-	{
-		camera.y = 0;
-	}
-	if( camera.x > LEVEL_WIDTH - camera.w )
-    {
-        camera.x = LEVEL_WIDTH - camera.w;
-    }
-    if( camera.y > LEVEL_HEIGHT - camera.h )
-    {
-        camera.y = LEVEL_HEIGHT - camera.h;
-    }
+	renderParticles();
 }
 
-void Dot::render( SDL_Rect& camera)
-{
-	gDotTexture.render( mBox.x - camera.x, mBox.y - camera.y );
-
-	renderParticles( camera );
-}
-
-void Dot::renderParticles( SDL_Rect& camera )
+void Dot::renderParticles()
 {
     for( int i = 0; i < TOTAL_PARTICLES; ++i )
     {
         if( particles[ i ]->isDead() )
         {
             delete particles[ i ];
-            particles[ i ] = new Particle( mBox.x, mBox.y );
+            particles[ i ] = new Particle( mPosX, mPosY );
         }
     }
 
     for( int i = 0; i < TOTAL_PARTICLES; ++i )
     {
-        particles[ i ]->render( camera );
+        particles[ i ]->render();
     }
-}
-
-Tile::Tile( int x, int y, int tileType )
-{
-	mBox.x = x;
-	mBox.y = y;
-
-	mBox.w = TILE_WIDTH;
-	mBox.h = TILE_HEIGHT;
-
-	mType = tileType;
-}
-
-void Tile::render( SDL_Rect& camera )
-{
-	if( checkCollision( camera, mBox ) )
-	{
-		gTileTexture.render( mBox.x - camera.x, mBox.y - camera.y, &gTileClips[ mType ] );
-	}
-}
-
-int Tile::getType()
-{
-	return mType;
-}
-
-SDL_Rect Tile::getBox()
-{
-	return mBox;
 }
 
 bool init()
@@ -511,7 +409,7 @@ bool init()
 	return success;
 }
 
-bool loadMedia( Tile* tiles[] )
+bool loadMedia()
 {
 	bool success = true;
 	
@@ -544,46 +442,22 @@ bool loadMedia( Tile* tiles[] )
 		printf( "Failed to load shimmer texture!\n" );
 		success = false;
 	}
-
-	if( !gTileTexture.loadFromFile( "tiles.png" ) )
-	{
-		printf( "Failed to load tile set texture!\n" );
-		success = false;
-	}
 	
 	gRedTexture.setAlpha( 192 );
 	gGreenTexture.setAlpha( 192 );
 	gBlueTexture.setAlpha( 192 );
 	gShimmerTexture.setAlpha( 192 );
 
-	if( !setTiles ( tiles ) )
-	{
-		printf( "Failed to load tile set\n" );
-		success = false;
-	}
-
 	return success;
 }
 
-void close( Tile* tiles[] )
+void close()
 {
-	for( int i = 0; i < TOTAL_TILES; ++i )
-	{
-		 if( tiles[ i ] != NULL )
-		 {
-			delete tiles[ i ];
-			tiles[ i ] = NULL;
-		 }
-	}
-
 	gDotTexture.free();
-
 	gRedTexture.free();
 	gGreenTexture.free();
 	gBlueTexture.free();
 	gShimmerTexture.free();
-
-	gTileTexture.free();
 	
 	SDL_DestroyRenderer( gRenderer );
 	SDL_DestroyWindow( gWindow );
@@ -594,185 +468,6 @@ void close( Tile* tiles[] )
 	SDL_Quit();
 }
 
-bool checkCollision( SDL_Rect a, SDL_Rect b )
-{
-    int leftA, leftB;
-    int rightA, rightB;
-    int topA, topB;
-    int bottomA, bottomB;
-
-    leftA = a.x;
-    rightA = a.x + a.w;
-    topA = a.y;
-    bottomA = a.y + a.h;
-
-    leftB = b.x;
-    rightB = b.x + b.w;
-    topB = b.y;
-    bottomB = b.y + b.h;
-
-    if( bottomA <= topB )
-    {
-        return false;
-    }
-
-    if( topA >= bottomB )
-    {
-        return false;
-    }
-
-    if( rightA <= leftB )
-    {
-        return false;
-    }
-
-    if( leftA >= rightB )
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool setTiles( Tile* tiles[] )
-{
-	bool tilesLoaded = true;
-
-	int x = 0, y = 0;
-
-	std::ifstream map( "lazy.map" );
-
-	if( map.fail() )
-	{
-		printf( "Failed to load map file\n" );
-		tilesLoaded = false;
-	}
-	else
-	{
-		for( int i = 0;i < TOTAL_TILES;i++)
-		{
-			int tileType = -1;
-
-			map >> tileType;
-
-			if( map.fail() )
-			{
-				printf( "Error loading map: Unexpected end of file!\n" );
-                tilesLoaded = false;
-                break;
-			}
-
-			if( ( tileType >= 0 ) && (tileType < TOTAL_TILE_SPRITES ) )
-			{
-				tiles[ i ] = new Tile( x, y, tileType );
-			}
-			else
-			{
-				printf( "Error loading map: Invalid tile type at %d!\n", i );
-                tilesLoaded = false;
-                break;
-			}
-
-			x += TILE_WIDTH;
-
-            if( x >= LEVEL_WIDTH )
-            {
-                x = 0;
-
-                y += TILE_HEIGHT;
-            }
-			
-		}
-
-		if( tilesLoaded )
-        {
-            gTileClips[ TILE_RED ].x = 0;
-            gTileClips[ TILE_RED ].y = 0;
-            gTileClips[ TILE_RED ].w = TILE_WIDTH;
-            gTileClips[ TILE_RED ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_GREEN ].x = 0;
-            gTileClips[ TILE_GREEN ].y = 80;
-            gTileClips[ TILE_GREEN ].w = TILE_WIDTH;
-            gTileClips[ TILE_GREEN ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_BLUE ].x = 0;
-            gTileClips[ TILE_BLUE ].y = 160;
-            gTileClips[ TILE_BLUE ].w = TILE_WIDTH;
-            gTileClips[ TILE_BLUE ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_TOPLEFT ].x = 80;
-            gTileClips[ TILE_TOPLEFT ].y = 0;
-            gTileClips[ TILE_TOPLEFT ].w = TILE_WIDTH;
-            gTileClips[ TILE_TOPLEFT ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_LEFT ].x = 80;
-            gTileClips[ TILE_LEFT ].y = 80;
-            gTileClips[ TILE_LEFT ].w = TILE_WIDTH;
-            gTileClips[ TILE_LEFT ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_BOTTOMLEFT ].x = 80;
-            gTileClips[ TILE_BOTTOMLEFT ].y = 160;
-            gTileClips[ TILE_BOTTOMLEFT ].w = TILE_WIDTH;
-            gTileClips[ TILE_BOTTOMLEFT ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_TOP ].x = 160;
-            gTileClips[ TILE_TOP ].y = 0;
-            gTileClips[ TILE_TOP ].w = TILE_WIDTH;
-            gTileClips[ TILE_TOP ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_CENTER ].x = 160;
-            gTileClips[ TILE_CENTER ].y = 80;
-            gTileClips[ TILE_CENTER ].w = TILE_WIDTH;
-            gTileClips[ TILE_CENTER ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_BOTTOM ].x = 160;
-            gTileClips[ TILE_BOTTOM ].y = 160;
-            gTileClips[ TILE_BOTTOM ].w = TILE_WIDTH;
-            gTileClips[ TILE_BOTTOM ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_TOPRIGHT ].x = 240;
-            gTileClips[ TILE_TOPRIGHT ].y = 0;
-            gTileClips[ TILE_TOPRIGHT ].w = TILE_WIDTH;
-            gTileClips[ TILE_TOPRIGHT ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_RIGHT ].x = 240;
-            gTileClips[ TILE_RIGHT ].y = 80;
-            gTileClips[ TILE_RIGHT ].w = TILE_WIDTH;
-            gTileClips[ TILE_RIGHT ].h = TILE_HEIGHT;
-
-            gTileClips[ TILE_BOTTOMRIGHT ].x = 240;
-            gTileClips[ TILE_BOTTOMRIGHT ].y = 160;
-            gTileClips[ TILE_BOTTOMRIGHT ].w = TILE_WIDTH;
-            gTileClips[ TILE_BOTTOMRIGHT ].h = TILE_HEIGHT;
-        }
-
-	}
-
-	map.close();
-
-	return tilesLoaded;
-	
-}
-
-bool touchesWall( SDL_Rect box, Tile* tiles[] )
-{
-
-	for(int i = 0 ; i < TOTAL_TILES ; i++ )
-	{
-		if( (tiles[i]->getType() >= TILE_CENTER ) && ( tiles[i]->getType() <= TILE_TOPLEFT ) )
-		{
-			if( checkCollision( box, tiles[i]->getBox() ) )
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
-
-}
-
 int main( int argc, char* args[] )
 {
 	if( !init() )
@@ -781,9 +476,7 @@ int main( int argc, char* args[] )
 	}
 	else
 	{
-		Tile* tileSet[ TOTAL_TILES ];
-
-		if( !loadMedia( tileSet ) )
+		if( !loadMedia() )
 		{
 			printf( "Failed to load media!\n" );
 		}
@@ -794,8 +487,6 @@ int main( int argc, char* args[] )
 			SDL_Event e;
 
 			Dot dot;
-
-			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 			while( !quit )
 			{
@@ -809,26 +500,19 @@ int main( int argc, char* args[] )
 					dot.handleEvent( e );
 				}
 
-				dot.move( tileSet );
-				dot.setCamera( camera );
+				dot.move();
 				
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 				
-				for( int i = 0 ; i < TOTAL_TILES ; i++ )
-				{
-					tileSet[i]->render( camera );
-				}
-
-				dot.render( camera );
+				dot.render();
 				
 				SDL_RenderPresent( gRenderer );
 			}
 		}
-
-		close( tileSet );
-
 	}
+	
+	close();
 
 	return 0;
 }
