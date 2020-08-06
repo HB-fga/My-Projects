@@ -1,4 +1,4 @@
-FILE = SDL_9.cpp
+FILE = SDL_10.cpp
 
 # CC especifica o compilador usado
 CC = g++
