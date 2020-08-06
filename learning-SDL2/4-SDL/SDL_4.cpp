@@ -553,13 +553,13 @@ bool loadMedia()
 	// SDL_Color textColor = { 0, 0, 0, 0xFF };
 	// SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
-	// SDL_RWops* file = SDL_RWFromFile( "nums.bin", "r+b" );
+	// SDL_RWops* file = SDL_RWFromFile( "../resources/nums.bin", "r+b" );
 
 	// if( file == NULL )
 	// {
 	// 	printf( "Warning: Unable to open file!\n" );
 
-	// 	file = SDL_RWFromFile( "nums.bin", "w+b" );
+	// 	file = SDL_RWFromFile( "../resources/nums.bin", "w+b" );
 	// 	if( file != NULL )
 	// 	{
 	// 		printf( "New file created!\n" );
@@ -592,7 +592,7 @@ bool loadMedia()
 	// }
 	
 
-	// gFont = TTF_OpenFont( "pixel-font.ttf", 28 );
+	// gFont = TTF_OpenFont( "../resources/pixel-font.ttf", 28 );
 	// if( gFont == NULL )
 	// {
 	// 	printf( "Failed to load pixel font! SDL_ttf Error: %s\n", TTF_GetError() );
@@ -614,19 +614,19 @@ bool loadMedia()
     //     gDataTextures[ i ].loadFromRenderedText( std::to_string( gData[ i ] ), textColor );
     // }
 
-	// if( !gDotTexture.loadFromFile( "dot.bmp" ) )
+	// if( !gDotTexture.loadFromFile( "../resources/dot.bmp" ) )
 	// {
 	// 	printf( "Failed to load dot texture!\n" );
 	// 	success = false;
 	// }
 
-	// // if( !gBGTexture.loadFromFile( "bg1.png" ) )
+	// // if( !gBGTexture.loadFromFile( "../resources/bg1.png" ) )
 	// // {
 	// // 	printf( "Failed to load background texture!\n" );
 	// // 	success = false;
 	// // }
 
-	// if( !gBGTexture.loadFromFile( "bg2.png" ) )
+	// if( !gBGTexture.loadFromFile( "../resources/bg2.png" ) )
 	// {
 	// 	printf( "Failed to load background texture!\n" );
 	// 	success = false;

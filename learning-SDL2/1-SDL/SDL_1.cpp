@@ -266,14 +266,14 @@ bool loadMedia()
     bool success = true;
 
     // Carrega carinha
-    if( !gFooTexture.loadFromFile( "guy.png" ) )
+    if( !gFooTexture.loadFromFile( "../resources/guy.png" ) )
     {
         printf( "Failed to load guy texture image!\n" );
         success = false;
     }
     
     // Carrega fundo
-    if( !gBackgroundTexture.loadFromFile( "background.png" ) )
+    if( !gBackgroundTexture.loadFromFile( "../resources/background.png" ) )
     {
         printf( "Failed to load background texture image!\n" );
         success = false;
@@ -281,7 +281,7 @@ bool loadMedia()
 
 
     // Carrega default
-    gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ] = loadTexture("press.png");
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ] = loadTexture("../resources/press.png");
     if( gKeyPressTextures[ KEY_PRESS_TEXTURE_DEFAULT ] == NULL )
     {
         printf( "Failed to load default image!\n" );
@@ -289,7 +289,7 @@ bool loadMedia()
     }
 
     // Carrega up
-    gKeyPressTextures[ KEY_PRESS_TEXTURE_UP ] = loadTexture( "up.bmp" );
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_UP ] = loadTexture( "../resources/up.bmp" );
     if( gKeyPressTextures[ KEY_PRESS_TEXTURE_UP ] == NULL )
     {
         printf( "Failed to load up image!\n" );
@@ -297,7 +297,7 @@ bool loadMedia()
     }
 
     // Carrega down
-    gKeyPressTextures[ KEY_PRESS_TEXTURE_DOWN ] = loadTexture( "down.bmp" );
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_DOWN ] = loadTexture( "../resources/down.bmp" );
     if( gKeyPressTextures[ KEY_PRESS_TEXTURE_DOWN ] == NULL )
     {
         printf( "Failed to load down image!\n" );
@@ -305,7 +305,7 @@ bool loadMedia()
     }
 
     // Carrega left
-    gKeyPressTextures[ KEY_PRESS_TEXTURE_LEFT ] = loadTexture( "left.bmp" );
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_LEFT ] = loadTexture( "../resources/left.bmp" );
     if( gKeyPressTextures[ KEY_PRESS_TEXTURE_LEFT ] == NULL )
     {
         printf( "Failed to load left image!\n" );
@@ -313,7 +313,7 @@ bool loadMedia()
     }
 
     // Carrega right
-    gKeyPressTextures[ KEY_PRESS_TEXTURE_RIGHT ] = loadTexture( "right.bmp" );
+    gKeyPressTextures[ KEY_PRESS_TEXTURE_RIGHT ] = loadTexture( "../resources/right.bmp" );
     if( gKeyPressTextures[ KEY_PRESS_TEXTURE_RIGHT ] == NULL )
     {
         printf( "Failed to load right image!\n" );

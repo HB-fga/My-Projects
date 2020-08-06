@@ -581,7 +581,7 @@ bool loadMedia()
 {
 	bool success = true;
 
-	gFont = TTF_OpenFont( "pixel-font.ttf", 28 );
+	gFont = TTF_OpenFont( "../resources/pixel-font.ttf", 28 );
 	if( gFont == NULL )
 	{
 		printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
@@ -604,7 +604,7 @@ bool loadMedia()
 		}
 	}
 
-	if( !gDotTexture.loadFromFile("dot.bmp") )
+	if( !gDotTexture.loadFromFile("../resources/dot.bmp") )
 	{
 		printf( "Unable to render dot texture!\n" );
 		success = false;

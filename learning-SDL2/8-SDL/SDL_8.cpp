@@ -441,7 +441,7 @@ bool DataStream::loadMedia()
 	for( int i = 0; i < 4; ++i )
 	{
 		char path[ 64 ] = "";
-		sprintf( path, "foo_walk_%d.png", i );
+		sprintf( path, "../resources/foo_walk_%d.png", i );
 
 		SDL_Surface* loadedSurface = IMG_Load( path );
 		if( loadedSurface == NULL )
@@ -710,13 +710,13 @@ bool loadMedia( Tile* tiles[] )
 {
 	bool success = true;
 	
-	if( !gDotTexture.loadFromFile( "dot.bmp" ) )
+	if( !gDotTexture.loadFromFile( "../resources/dot.bmp" ) )
 	{
 		printf( "Failed to load dot texture!\n" );
 		success = false;
 	}
 
-	if( !gFooTexture.loadFromFile( "foo.png" ) )
+	if( !gFooTexture.loadFromFile( "../resources/foo.png" ) )
 	{
 		printf( "failed\n" );
 		success = false;
@@ -756,31 +756,31 @@ bool loadMedia( Tile* tiles[] )
 	}
 	
 	
-	if( !gRedTexture.loadFromFile( "red.bmp" ) )
+	if( !gRedTexture.loadFromFile( "../resources/red.bmp" ) )
 	{
 		printf( "Failed to load red texture!\n" );
 		success = false;
 	}
 	
-	if( !gGreenTexture.loadFromFile( "green.bmp" ) )
+	if( !gGreenTexture.loadFromFile( "../resources/green.bmp" ) )
 	{
 		printf( "Failed to load green texture!\n" );
 		success = false;
 	}
 
-	if( !gBlueTexture.loadFromFile( "blue.bmp" ) )
+	if( !gBlueTexture.loadFromFile( "../resources/blue.bmp" ) )
 	{
 		printf( "Failed to load blue texture!\n" );
 		success = false;
 	}
 
-	if( !gShimmerTexture.loadFromFile( "shimmer.bmp" ) )
+	if( !gShimmerTexture.loadFromFile( "../resources/shimmer.bmp" ) )
 	{
 		printf( "Failed to load shimmer texture!\n" );
 		success = false;
 	}
 
-	if( !gTileTexture.loadFromFile( "tiles.png" ) )
+	if( !gTileTexture.loadFromFile( "../resources/tiles.png" ) )
 	{
 		printf( "Failed to load tile set texture!\n" );
 		success = false;
@@ -887,7 +887,7 @@ bool setTiles( Tile* tiles[] )
 
 	int x = 0, y = 0;
 
-	std::ifstream map( "lazy.map" );
+	std::ifstream map( "../resources/lazy.map" );
 
 	if( map.fail() )
 	{

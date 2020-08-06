@@ -444,7 +444,7 @@ bool loadMedia()
 	bool success = true;
 
 	// Carrega textura do sprite sheet
-	if( !gSpriteSheetTexture.loadFromFile( "dots.png" ) )
+	if( !gSpriteSheetTexture.loadFromFile( "../resources/dots.png" ) )
 	{
 		printf( "Failed to load sprite sheet texture!\n" );
 		success = false;
@@ -477,26 +477,26 @@ bool loadMedia()
 	}
 
 	// Carrega textura RGB
-	if( !gModulatedTexture.loadFromFile( "colors.png" ) )
+	if( !gModulatedTexture.loadFromFile( "../resources/colors.png" ) )
 	{
 		printf( "Failed to load colors texture!\n" );
 		success = false;
 	}
 
 	// Carrega textura Alpha Blending
-	if( !gFade.loadFromFile( "fade.png" ) )
+	if( !gFade.loadFromFile( "../resources/fade.png" ) )
 	{
 		printf( "Failed to load colors texture!\n" );
 		success = false;
 	}
-	if( !gBGFade.loadFromFile( "bg-fade.png" ) )
+	if( !gBGFade.loadFromFile( "../resources/bg-fade.png" ) )
 	{
 		printf( "Failed to load colors texture!\n" );
 		success = false;
 	}
 
 	// Carrega sprite sheet da caminhada
-    if( !gWalkingSSTexture.loadFromFile( "walking-guy.png" ) )
+    if( !gWalkingSSTexture.loadFromFile( "../resources/walking-guy.png" ) )
     {
         printf( "Failed to load walking animation texture!\n" );
         success = false;
@@ -525,14 +525,14 @@ bool loadMedia()
         gWalkingSpriteClips[ 3 ].h = 205;
     }
 
-	if( !gArrowSprite.loadFromFile("arrow.png"))
+	if( !gArrowSprite.loadFromFile("../resources/arrow.png"))
 	{
         printf( "Failed to load walking animation texture!\n" );
         success = false;
     }
 
 	// Abre a fonte
-	gFont = TTF_OpenFont("font.ttf", 20);
+	gFont = TTF_OpenFont("../resources/font.ttf", 20);
 	if(gFont == NULL)
 	{
 		printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
@@ -555,7 +555,7 @@ bool loadMedia()
 		}
 	}
 
-	if(!gButtonSpriteSheetTexture.loadFromFile("button.png"))
+	if(!gButtonSpriteSheetTexture.loadFromFile("../resources/button.png"))
 	{
         printf( "Failed to load walking animation texture!\n" );
         success = false;
@@ -588,34 +588,34 @@ bool loadMedia()
 	gButtons[ 2 ].setPosition( 0, SCREEN_HEIGHT - BUTTON_HEIGHT );
 	gButtons[ 3 ].setPosition( SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT );
 
-	if(!gPressTexture.loadFromFile("press.png"))
+	if(!gPressTexture.loadFromFile("../resources/press.png"))
 	{
         printf( "Failed to load walking animation texture!\n" );
         success = false;
     }
-	if(!gUpTexture.loadFromFile("up.bmp"))
+	if(!gUpTexture.loadFromFile("../resources/up.bmp"))
 	{
         printf( "Failed to load walking animation texture!\n" );
         success = false;
     }
-	if(!gDownTexture.loadFromFile("down.bmp"))
+	if(!gDownTexture.loadFromFile("../resources/down.bmp"))
 	{
         printf( "Failed to load walking animation texture!\n" );
         success = false;
     }
-	if(!gLeftTexture.loadFromFile("left.bmp"))
+	if(!gLeftTexture.loadFromFile("../resources/left.bmp"))
 	{
         printf( "Failed to load walking animation texture!\n" );
         success = false;
     }
-	if(!gRightTexture.loadFromFile("right.bmp"))
+	if(!gRightTexture.loadFromFile("../resources/right.bmp"))
 	{
         printf( "Failed to load walking animation texture!\n" );
         success = false;
     }
 
 	// Carrega musica
-	gMusic = Mix_LoadMUS( "beat.wav" );
+	gMusic = Mix_LoadMUS( "../resources/beat.wav" );
 	if(gMusic == NULL)
 	{
 		printf( "Failed to load beat music! SDL_mixer Error: %s\n", Mix_GetError() );
@@ -623,28 +623,28 @@ bool loadMedia()
 	}
 
 	// Carrega efeitos sonoros
-	gScratch = Mix_LoadWAV( "scratch.wav" );
+	gScratch = Mix_LoadWAV( "../resources/scratch.wav" );
 	if( gScratch == NULL )
     {
         printf( "Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
     
-    gHigh = Mix_LoadWAV( "high.wav" );
+    gHigh = Mix_LoadWAV( "../resources/high.wav" );
     if( gHigh == NULL )
     {
         printf( "Failed to load high sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
 
-    gMedium = Mix_LoadWAV( "medium.wav" );
+    gMedium = Mix_LoadWAV( "../resources/medium.wav" );
     if( gMedium == NULL )
     {
         printf( "Failed to load medium sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
 
-    gLow = Mix_LoadWAV( "low.wav" );
+    gLow = Mix_LoadWAV( "../resources/low.wav" );
     if( gLow == NULL )
     {
         printf( "Failed to load low sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
