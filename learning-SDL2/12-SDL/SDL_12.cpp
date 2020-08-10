@@ -1,6 +1,7 @@
 // Aula 46 - multithreading
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_thread.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <string>
@@ -134,6 +135,8 @@ bool init();
 bool loadMedia();
 
 void close();
+
+int threadFunction( void* data );
 
 SDL_Window* gWindow = NULL;
 
@@ -712,6 +715,13 @@ void close()
 	SDL_Quit();
 }
 
+int threadFunction( void* data )
+{
+	printf( "running thread with value = %d\n", data );
+
+	return 0;
+}
+
 int main( int argc, char* args[] )
 {
 	if( !init() )
@@ -735,6 +745,9 @@ int main( int argc, char* args[] )
 			LTimer stepTimer;
 
 			SDL_TimerID timerID = SDL_AddTimer( 3 * 1000, callback, (void*)"3 seconds waited!" );
+
+			int data = 101;
+			SDL_Thread* threadID = SDL_CreateThread( threadFunction, "MyThread", (void*)data );
 
 			while( !quit )
 			{
@@ -765,6 +778,7 @@ int main( int argc, char* args[] )
 			}
 
 			SDL_RemoveTimer( timerID );
+			SDL_WaitThread( threadID, NULL );
 		}
 
 		close();
