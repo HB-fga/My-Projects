@@ -1,4 +1,4 @@
-// Aula 43
+// Aula 43 - renderizando a cena em uma textura
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

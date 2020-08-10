@@ -1,4 +1,4 @@
-// Aula 42
+// Aula 42 - streaming de textura
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

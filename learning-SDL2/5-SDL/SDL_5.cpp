@@ -1,4 +1,4 @@
-// Aula 38
+// Aula 38 - Particulas
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

@@ -1,4 +1,4 @@
-// Aula 39
+// Aula 39 - Engine baseada em tiles
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

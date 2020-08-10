@@ -1,4 +1,4 @@
-// Aula 45 - callbacks temporizados
+// Aula 46 - multithreading
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

@@ -1,4 +1,4 @@
-// Aula 44
+// Aula 44 - movimentacao independente do framerate
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

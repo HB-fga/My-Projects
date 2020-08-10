@@ -1,4 +1,4 @@
-// Aula 40
+// Aula 40 - Manipulacao de pixels e textura
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
