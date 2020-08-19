@@ -215,6 +215,8 @@ int main( int argc, char* args[] )
 
 			Entity player;
 
+			player.get_texture().loadFromFile( g_engine.get_renderer(), "res/player-idle1.png" );
+
             // FOR SOME REASON IT ERASES THE TEXTURE
             // player.set_texture(player_texture);
 
@@ -330,7 +332,6 @@ int main( int argc, char* args[] )
 						{
 							camera.y = LEVEL_HEIGHT - camera.h;
 						}
-
 
 						prompt_text_texture.render( g_engine.get_renderer(), ( SCREEN_WIDTH - prompt_text_texture.getWidth() ) / 2, 0 );
 
