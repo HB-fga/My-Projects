@@ -27,7 +27,7 @@ int main( int argc, char *argv[] )
 
 	// Entity entities[3] = { Entity( 0, 0, texture ), Entity( 30, 0, texture ), Entity( 30, 30, texture ) };
 
-	std::vector<Entity> entities = { Entity( Vector2f( 0, 0), cow_texture ), Entity( Vector2f( 30, 0), cow_texture ), Entity( Vector2f( 0, 30), cow_texture ), Entity( Vector2f( 30, 30), cow_texture ) };
+	std::vector<Entity> entities = { Entity( 0, 0, cow_texture ), Entity( 30, 0, cow_texture ), Entity( 0, 30, cow_texture ), Entity( 30, 30, cow_texture ) };
 
 	bool quit = false;
 
