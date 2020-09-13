@@ -1,58 +1,49 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
-#include <iostream>
-#include <vector>
+#include <SDL2/SDL_ttf.h>
+
+#include <stdio.h>
 #include <string>
 
-#include "RenderWindow.hpp"
-#include "Entity.hpp"
+#include "globals.hpp"
+#include "utils.hpp"
 
-const int WINDOW_WIDTH = 1280;
-const int WINDOW_HEIGHT = 720;
+#include "HTexture.hpp"
 
-int main( int argc, char *argv[] )
-{
+#include "GS.hpp"
+#include "GSIntro.hpp"
+#include "GSTitle.hpp"
 
-	if( SDL_Init( SDL_INIT_VIDEO ) > 0 )
-		std::cout << "SDL_Init Failed. Error: " << SDL_GetError() << std::endl;
+int main( int argc, char* args[] ) {
 
-	if( !(IMG_Init( IMG_INIT_PNG ) ) )
-		std::cout << "IMG_Init Failed. Error: " << SDL_GetError() << std::endl;
+    bool success = true;
 
-	RenderWindow window( "Game", WINDOW_WIDTH, WINDOW_HEIGHT );
+    if( !init() )
+    {
+        printf("failed init\n");
+        success = false;
+    }
 
-	SDL_Texture* cow_texture = window.loadTexture("res/cowbg.png");
+    if( success )
+    {
+        state_ID = STATE_INTRO;
 
-	// Entity entities[3] = { Entity( 0, 0, texture ), Entity( 30, 0, texture ), Entity( 30, 30, texture ) };
+        current_state = new GSIntro();
 
-	std::vector<Entity> entities = { Entity( 0, 0, cow_texture ), Entity( 30, 0, cow_texture ), Entity( 0, 30, cow_texture ), Entity( 30, 30, cow_texture ) };
+        while( state_ID != STATE_EXIT )
+        {
+            current_state->handleEvents();
 
-	bool quit = false;
+            current_state->logic();
 
-	SDL_Event event;
+            change_state();
 
-	while(!quit)
-	{
-		while( SDL_PollEvent( &event ) )
-		{
-			if( event.type == SDL_QUIT )
-				quit = true;
-		}
+            current_state->render();
+        }
+    }
 
-		window.clear();
-		
-		for(Entity& e : entities)
-		{
-			window.render(e);
-		}
+    close();
 
-		window.display();
-	}
-
-	window.cleanUp();
-	SDL_Quit();
-
-	return 0;
+    return 0;
 }
