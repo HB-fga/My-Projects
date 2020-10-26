@@ -30,7 +30,6 @@ int main()
     {
         while(classes >> line)
         {
-            cout << line << endl;
             hours.push_back  ( (line[0] - '0')*10 + (line[1] - '0'));
             minutes.push_back( (line[3] - '0')*10 + (line[4] - '0'));
             seconds.push_back( (line[6] - '0')*10 + (line[7] - '0'));
@@ -41,6 +40,8 @@ int main()
 
     while(1)
     {
+        system("clear");
+
         cout << "O que deseja fazer? [V]er | [R]emover | [I]nserir | [S]alvar e Sair\n";
         cin >> c_input;
 
@@ -83,6 +84,9 @@ int main()
 
                 total.clear();
 
+                cout << "Digite qualquer coisa para continuar\n";
+                cin >> c_input;
+
                 break;
 
             case 'R':
@@ -96,8 +100,11 @@ int main()
                         cout << setfill('0') << setw(2) << hours[i] << ":" << setfill('0') << setw(2) << minutes[i] << ":" << setfill('0') << setw(2) << seconds[i] << endl;
                     }
 
+
                     cout << "\nIndice do elemento que deseja remover ou [S]air\n";
                     cin >> c_input;
+
+                    system("clear");
 
                     if( c_input != 's' && c_input != 'S' )
                     {
@@ -120,8 +127,10 @@ int main()
                         cout << setfill('0') << setw(2) << hours[i] << ":" << setfill('0') << setw(2) << minutes[i] << ":" << setfill('0') << setw(2) << seconds[i] << endl;
                     }
 
-                    cout << "\nHoras ou -1 para sair\n";
+                    cout << "\nInsira o numero de horas ou -1 para sair\n";
                     cin >> i_input;
+
+                    system("clear");
 
                     if( i_input != -1 )
                     {
@@ -136,6 +145,8 @@ int main()
                         seconds.push_back( i_input );
                     }
                     else break;
+
+                    system("clear");
                 }
 
                 break;
