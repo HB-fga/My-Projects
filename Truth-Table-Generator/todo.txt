@@ -1,2 +1,0 @@
-Make it work for n number of variables
-Make it generate a txt file with the table

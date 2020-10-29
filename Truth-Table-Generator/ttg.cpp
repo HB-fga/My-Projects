@@ -2,6 +2,16 @@
 #include <fstream>
 #include <iomanip>
 
+// Write your Expression here
+
+// EXAMPLES:
+// #define EXPRESSAO ( A || !B );
+// #define EXPRESSAO ( A || !B ) && ( C || D );
+// #define EXPRESSAO ( A || !B ) && ( C || D );
+// #define EXPRESSAO ( A || !B ) && !( C || ( A && D ) );
+
+#define EXPRESSAO ( ( !A && B ) || ( A && !B ) )
+
 using namespace std;
 
 bool expression( int A, int B, int C, int D )
@@ -12,7 +22,7 @@ bool expression( int A, int B, int C, int D )
     // return ( A || !B ) && ( C || D );
     // return ( A || !B ) && !( C || ( A && D ) );
 
-    return /* INSERT YOUR EXPRESSION HERE */;
+    return EXPRESSAO;
 }
 
 int main()
