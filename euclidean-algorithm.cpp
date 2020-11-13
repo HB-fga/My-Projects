@@ -8,60 +8,82 @@ int main()
 
     int a, b;
     int mdc, mmc, n;
-    int v1[100];
-    int v2[100];
-    int v3[100];
+    int upper[100];
+    int middle[100];
+    int bottom[100];
+    int dio_column[100];
+    dio_column[0] = 1;
 
-    cout << "Insert 2 integers:" << endl;
-
-    cin >> a >> b;
-
-    if(b > a)
+    while(1)
     {
-        int swap = b;
-        b = a;
-        a = swap;
-    }
+        cout << "INSERT 2 INTEGERS (INSERT \"0 0\" TO QUIT):" << endl;
 
-    v2[0] = a;
-    v2[1] = b;
+        cin >> a >> b;
+        if( a == 0 && b == 0 ) break;
 
-    for(int i = 0; ;i++)
-    {
-        v1[i] = v2[i]/v2[i+1];
-        v3[i] = v2[i]%v2[i+1];
-        v2[i+2] = v3[i];
-
-        if(v2[i]%v2[i+1] == 0)
+        if(b > a)
         {
-            mdc = v3[i-1];
-            mmc = (a*b) / mdc;
-            n = i;
-            break;
+            int swap = b;
+            b = a;
+            a = swap;
         }
-    }
 
-    for(int i = 0; i <= n; i++)
-    {
-        if(i == 0) cout << "|   ";
-        cout << "|" << setw(3) << v1[i];
-    }
-    cout << "|" << endl;
+        middle[0] = a;
+        middle[1] = b;
 
-    for(int i = 0; i <= n + 1; i++)
-    {
-        cout << "|" << setw(3) << v2[i];
-    }
-    cout << "|" << endl;
 
-    for(int i = 0; i <= n; i++)
-    {
-        cout << "|" << setw(3) << v3[i];
-    }
-    cout << "|   |" << endl;
+        for(int i = 0; ; i++)
+        {
+            upper[i] = middle[i]/middle[i+1];
+            bottom[i] = middle[i]%middle[i+1];
+            middle[i+2] = bottom[i];
 
-    cout << "MDC = " << mdc << endl;
-    cout << "MMC = " << mmc << endl;
+            if(middle[i]%middle[i+1] == 0)
+            {
+                mdc = middle[i+1];
+                mmc = (a*b) / mdc;
+                n = i;
+                break;
+            }
+        }
+
+        for(int i = 0; i <= n; i++)
+        {
+            if(i == 0) cout << "|   ";
+            cout << "|" << setw(3) << upper[i];
+        }
+        cout << "|" << endl;
+
+        for(int i = 0; i <= n + 1; i++)
+        {
+            cout << "|" << setw(3) << middle[i];
+        }
+        cout << "|" << endl;
+
+        for(int i = 0; i <= n; i++)
+        {
+            cout << "|" << setw(3) << bottom[i];
+        }
+        cout << "|   |" << endl << endl;
+
+        dio_column[1] = upper[n-1];
+        // cout << "upper n-1 = " << upper[n-1] << endl;
+
+        cout << " q | xy" << endl;
+        cout << " - |" << setw(3) << dio_column[0] << endl;
+        cout << setw(3) << upper[n-1] << "|" << setw(3) << dio_column[1] << endl;
+
+        for(int i = 2; i <= n; i++ )
+        {
+            dio_column[i] = ( upper[n-i] * dio_column[i-1]) + dio_column[i-2];
+            cout << setw(3) << upper[n-i] << "|" << setw(3) << dio_column[i] << endl;
+        }
+        cout << endl;
+
+        n%2 == 0 ? cout << "q = even\n" : cout << "q = odd\n";
+        cout << "MDC = " << mdc << endl;
+        cout << "MMC = " << mmc << endl << endl;
+    }
 
     return 0;
 }
