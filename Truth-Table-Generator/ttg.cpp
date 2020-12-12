@@ -10,7 +10,10 @@
 // #define EXPRESSAO ( A || !B ) && ( C || D );
 // #define EXPRESSAO ( A || !B ) && !( C || ( A && D ) );
 
-#define EXPRESSAO ( ( !A && B ) || ( A && !B ) )
+// #define EXPRESSAO (( !A && !B && C ) || ( A && B && !C ))
+// #define EXPRESSAO ( !A || ( !B && !C ))
+// #define EXPRESSAO (( !A && !B ) || ( A && !C ))
+#define EXPRESSAO ( !A && !B )
 
 using namespace std;
 
